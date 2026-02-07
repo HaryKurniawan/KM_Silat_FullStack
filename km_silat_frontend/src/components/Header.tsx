@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, LogOut, LogIn } from 'lucide-react';
+import { User, LogOut, LogIn, LayoutDashboard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Header.css';
@@ -37,6 +37,14 @@ export const Header = () => {
         setIsDropdownOpen(false);
         navigate('/login');
     };
+
+    const handleDashboardClick = () => {
+        setIsDropdownOpen(false);
+        navigate('/dashboard');
+    };
+
+    // Check if user is admin
+    const isAdmin = user?.role?.toLowerCase() === 'admin';
 
     return (
         <header className="app-header">
@@ -77,13 +85,28 @@ export const Header = () => {
                             />
                             <div className="user-dropdown">
                                 {isAuthenticated && user ? (
-                                    // Logged in - Show user info and logout
+                                    // Logged in - Show user info, dashboard (if admin), and logout
                                     <>
                                         <div className="dropdown-user-info">
                                             <p className="dropdown-username">{user.username}</p>
                                             <p className="dropdown-role">{user.role}</p>
                                         </div>
                                         <div className="dropdown-divider"></div>
+                                        
+                                        {/* Dashboard Menu - Only show for Admin */}
+                                        {isAdmin && (
+                                            <button 
+                                                className="dropdown-item dropdown-item-dashboard"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDashboardClick();
+                                                }}
+                                            >
+                                                <LayoutDashboard size={18} />
+                                                <span>Dashboard Admin</span>
+                                            </button>
+                                        )}
+                                        
                                         <button 
                                             className="dropdown-item"
                                             onClick={(e) => {

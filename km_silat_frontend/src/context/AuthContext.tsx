@@ -10,7 +10,7 @@ interface User {
 interface AuthContextType {
     user: User | null;
     isLoading: boolean;
-    login: (credentials: any) => Promise<void>;
+    login: (credentials: any) => Promise<{ user: User }>;
     logout: () => void;
     isAuthenticated: boolean;
 }
@@ -42,7 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsLoading(false);
     }, []);
 
-    const login = async (credentials: any) => {
+    const login = async (credentials: any): Promise<{ user: User }> => {
         try {
             console.log('AuthContext - Login attempt with:', credentials);
             const response = await authService.login(credentials);
@@ -59,6 +59,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(userData);
             
             console.log('AuthContext - User logged in successfully:', userData);
+            
+            return { user: userData };
         } catch (error) {
             console.error('AuthContext - Login error:', error);
             throw error;

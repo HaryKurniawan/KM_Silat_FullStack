@@ -7,7 +7,6 @@ import { DetailPage } from './pages/DetailPage';
 import { SeniSelectionPage } from './pages/SeniSelectionPage';
 import { KnowledgeManagementPage } from './pages/KnowledgeManagementPage';
 import { Login } from './pages/Login';
-import { AdminLogin } from './pages/dashboard/AdminLogin.tsx';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { DashboardHome } from './pages/dashboard/DashboardHome';
 import { ManageAnggota } from './pages/dashboard/ManageAnggota';
@@ -17,7 +16,7 @@ import { ManageUsers } from './pages/dashboard/ManageUsers';
 import './index.css';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -27,8 +26,20 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  if (!isAuthenticated) return <Navigate to="/dashboard/login" replace />;
-  return children;
+  // Redirect ke login jika belum authenticated
+  if (!isAuthenticated) {
+    console.log('ProtectedRoute - Not authenticated, redirecting to /login');
+    return <Navigate to="/login" replace />;
+  }
+  
+  // Redirect ke home jika bukan admin
+  if (user?.role?.toLowerCase() !== 'admin') {
+    console.log('ProtectedRoute - User is not admin, redirecting to /');
+    return <Navigate to="/" replace />;
+  }
+
+  console.log('ProtectedRoute - Access granted for admin');
+  return <>{children}</>;
 };
 
 function App() {
@@ -44,10 +55,7 @@ function App() {
           <Route path="/seni/:subCategory" element={<RoadmapPage />} />
           <Route path="/seni/:itemId" element={<DetailPage />} />
 
-          {/* Admin Login Route */}
-          <Route path="/dashboard/login" element={<AdminLogin />} />
-
-          {/* Dashboard Routes (Protected) */}
+          {/* Dashboard Routes (Protected - Admin Only) */}
           <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
             <Route index element={<DashboardHome />} />
             <Route path="anggota" element={<ManageAnggota />} />

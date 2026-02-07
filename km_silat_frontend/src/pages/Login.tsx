@@ -19,10 +19,22 @@ export const Login = () => {
         setLoading(true);
 
         try {
-            await login({ username, password }); 
-            // Redirect ke landing page setelah login berhasil
-            navigate('/');
+            const response = await login({ username, password });
+            
+            // Redirect berdasarkan role
+            const userRole = response?.user?.role?.toLowerCase();
+            
+            console.log('Login - User role:', userRole);
+            
+            if (userRole === 'admin') {
+                console.log('Login - Redirecting to dashboard');
+                navigate('/dashboard');
+            } else {
+                console.log('Login - Redirecting to home');
+                navigate('/');
+            }
         } catch (err: any) {
+            console.error('Login - Error:', err);
             setError(err.response?.data?.message || 'Login gagal. Periksa username dan password Anda.');
         } finally {
             setLoading(false);
@@ -37,7 +49,7 @@ export const Login = () => {
                 <div className="login-header">
                     <img src={logo} alt="Logo" className="login-logo" />
                     <h1 className="login-title">UKM Pencak Silat</h1>
-                    <p className="login-subtitle">Masuk sebagai Anggota</p>
+                    <p className="login-subtitle">Masuk ke Akun Anda</p>
                 </div>
 
                 {error && (

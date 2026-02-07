@@ -32,28 +32,43 @@ export const KnowledgeManagementPage = () => {
     const [sortBy, setSortBy] = useState<SortOption>('championships');
     const [studentsData, setStudentsData] = useState<Student[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchStudents = async () => {
             setLoading(true);
+            setError(null);
             try {
+                console.log('🔄 Fetching students data...');
                 const response = await anggotaService.getAll();
+                console.log('📦 Raw API Response:', response.data);
+                
                 // Map API data to component nested structure
-                const mappedData: Student[] = response.data.map((item: any) => ({
-                    id: item.id,
-                    name: item.nama,
-                    role: item.peran as 'Pelatih' | 'Anggota',
-                    batch: item.angkatan,
-                    specialty: item.spesialisasi as 'Seni' | 'Tanding',
-                    championships: item.kejuaraan?.map((c: { nama: string; tahun: number; prestasi: string }) => ({
-                        name: c.nama,
-                        year: c.tahun,
-                        achievement: c.prestasi
-                    })) || []
-                }));
+                const mappedData: Student[] = response.data.map((item: any) => {
+                    console.log('🔍 Mapping item:', item);
+                    return {
+                        id: item.id,
+                        name: item.nama,
+                        role: item.peran as 'Pelatih' | 'Anggota',
+                        batch: item.angkatan,
+                        specialty: item.spesialisasi as 'Seni' | 'Tanding',
+                        championships: item.kejuaraan?.map((c: { nama: string; tahun: number; prestasi: string }) => ({
+                            name: c.nama,
+                            year: c.tahun,
+                            achievement: c.prestasi
+                        })) || []
+                    };
+                });
+                
+                console.log('✅ Mapped Data:', mappedData);
+                console.log('📊 Total students fetched:', mappedData.length);
+                console.log('👥 Anggota count:', mappedData.filter(s => s.role === 'Anggota').length);
+                console.log('👨‍🏫 Pelatih count:', mappedData.filter(s => s.role === 'Pelatih').length);
+                
                 setStudentsData(mappedData);
             } catch (error: any) {
-                console.error("Failed to fetch students", error);
+                console.error("❌ Failed to fetch students", error);
+                setError(error.response?.data?.message || 'Gagal memuat data');
             } finally {
                 setLoading(false);
             }
@@ -63,9 +78,17 @@ export const KnowledgeManagementPage = () => {
     }, []);
 
     const filteredAndSortedStudents = useMemo(() => {
-        return studentsData
+        console.log('🔎 Filtering students...');
+        console.log('Active Tab:', activeTab);
+        console.log('Total Data:', studentsData.length);
+        console.log('Search Query:', searchQuery);
+        console.log('Specialty Filter:', specialtyFilter);
+        console.log('Achievement Filter:', achievementFilter);
+        
+        const filtered = studentsData
             .filter(student => {
-                const matchesRole = student.role === activeTab;
+                // Case-insensitive role matching
+                const matchesRole = student.role.toLowerCase() === activeTab.toLowerCase();
                 const matchesSearch = student.name.toLowerCase().includes(searchQuery.toLowerCase());
                 const matchesSpecialty = specialtyFilter === 'All' || student.specialty === specialtyFilter;
 
@@ -80,7 +103,13 @@ export const KnowledgeManagementPage = () => {
                     }
                 }
 
-                return matchesRole && matchesSearch && matchesSpecialty && matchesAchievement;
+                const passes = matchesRole && matchesSearch && matchesSpecialty && matchesAchievement;
+                
+                if (!passes) {
+                    console.log(`❌ ${student.name} filtered out - Role: ${matchesRole}, Search: ${matchesSearch}, Specialty: ${matchesSpecialty}, Achievement: ${matchesAchievement}`);
+                }
+                
+                return passes;
             })
             .sort((a, b) => {
                 if (sortBy === 'championships') {
@@ -88,7 +117,10 @@ export const KnowledgeManagementPage = () => {
                 }
                 return a.name.localeCompare(b.name);
             });
-    }, [searchQuery, activeTab, specialtyFilter, achievementFilter, sortBy]);
+        
+        console.log('✅ Filtered Results:', filtered.length);
+        return filtered;
+    }, [searchQuery, activeTab, specialtyFilter, achievementFilter, sortBy, studentsData]);
 
     return (
         <div className="km-page">
@@ -103,14 +135,20 @@ export const KnowledgeManagementPage = () => {
                 <div className="role-tabs">
                     <button
                         className={`role-tab ${activeTab === 'Anggota' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('Anggota')}
+                        onClick={() => {
+                            console.log('🔄 Switching to Anggota tab');
+                            setActiveTab('Anggota');
+                        }}
                     >
                         <Users size={18} />
                         <span>Anggota</span>
                     </button>
                     <button
                         className={`role-tab ${activeTab === 'Pelatih' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('Pelatih')}
+                        onClick={() => {
+                            console.log('🔄 Switching to Pelatih tab');
+                            setActiveTab('Pelatih');
+                        }}
                     >
                         <User size={18} />
                         <span>Pelatih</span>
@@ -194,10 +232,21 @@ export const KnowledgeManagementPage = () => {
                     </div>
                 </div>
 
+                {/* Content Area */}
                 <div className="students-grid">
                     {loading ? (
                         <div className="empty-state">
                             <p>Loading data...</p>
+                        </div>
+                    ) : error ? (
+                        <div className="empty-state">
+                            <p style={{ color: '#e74c3c' }}>❌ {error}</p>
+                            <button 
+                                onClick={() => window.location.reload()}
+                                style={{ marginTop: '1rem', padding: '0.5rem 1rem', cursor: 'pointer' }}
+                            >
+                                Muat Ulang
+                            </button>
                         </div>
                     ) : filteredAndSortedStudents.length > 0 ? (
                         filteredAndSortedStudents.map(student => (
@@ -238,6 +287,11 @@ export const KnowledgeManagementPage = () => {
                     ) : (
                         <div className="empty-state">
                             <p>Tidak ada data {activeTab.toLowerCase()} yang sesuai filter.</p>
+                            {studentsData.length > 0 && (
+                                <small style={{ marginTop: '0.5rem', opacity: 0.7 }}>
+                                    Total data tersedia: {studentsData.length}
+                                </small>
+                            )}
                         </div>
                     )}
                 </div>

@@ -1,0 +1,286 @@
+
+.manage-anggota-page {
+    min-height: 100vh;
+    padding: var(--spacing-xl) var(--spacing-lg);
+    padding-top: calc(64px + var(--spacing-xl));
+    background-color: var(--bg-primary);
+}
+
+/* Header */
+.manage-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-xl);
+    gap: var(--spacing-md);
+}
+
+.manage-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.btn-add-primary {
+    padding: 0.75rem 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.btn-add-primary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+/* Loading & Empty State */
+.loading-container {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-secondary);
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--text-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-secondary);
+}
+
+.empty-state-icon {
+    margin-bottom: 1rem;
+    opacity: 0.3;
+}
+
+.empty-state-text {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state-subtext {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* Desktop Table */
+.table-container {
+    overflow-x: auto;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+
+.anggota-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.anggota-table thead {
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.anggota-table th {
+    padding: 1rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: left;
+}
+
+.col-toggle {
+    width: 40px;
+}
+
+.anggota-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.2s;
+}
+
+.anggota-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.anggota-table td {
+    padding: 1rem;
+    color: var(--text-primary);
+}
+
+.student-name {
+    font-weight: 500;
+}
+
+.specialty-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.specialty-badge.tanding {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.specialty-badge.seni {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+/* Action Buttons */
+.btn-toggle,
+.btn-icon {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-toggle:hover,
+.btn-icon:hover {
+    color: rgba(255, 255, 255, 1);
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateY(-2px);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Championship Row */
+.championship-row {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.championship-content {
+    padding: 1rem 2rem;
+    border-left: 2px solid rgba(255, 255, 255, 0.2);
+    margin-left: 1rem;
+}
+
+.championship-header {
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.championship-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.championship-item {
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.championship-item:last-child {
+    border: none;
+    margin: 0;
+    padding-bottom: 0;
+}
+
+.championship-info {
+    flex: 1;
+}
+
+.championship-name {
+    font-weight: 500;
+}
+
+.championship-year {
+    margin-left: 0.5rem;
+    color: var(--text-secondary);
+}
+
+.championship-achievement {
+    margin-left: 1rem;
+    font-weight: 600;
+}
+
+.championship-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.no-data-message {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    margin: 0;
+}
+
+/* Mobile View */
+.mobile-card-view {
+    display: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .manage-anggota-page {
+        padding: 0;
+        padding-top: 0;
+    }
+
+    .manage-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .manage-title {
+        font-size: 1.25rem;
+    }
+
+    .btn-add-primary {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .table-container {
+        display: none;
+    }
+
+    .mobile-card-view {
+        display: block;
+    }
+}

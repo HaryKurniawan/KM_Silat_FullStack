@@ -43,14 +43,18 @@ export const Header = () => {
         navigate('/dashboard');
     };
 
+    const handleLogoClick = () => {
+        navigate('/');
+    };
+
     // Check if user is admin
     const isAdmin = user?.role?.toLowerCase() === 'admin';
 
     return (
         <header className="app-header">
             <div className="header-content">
-                {/* Logo Section */}
-                <div className="header-logo">
+                {/* Logo Section - Clickable */}
+                <div className="header-logo" onClick={handleLogoClick}>
                     <img src={logo} alt="Logo" className="logo-image" />
                     <span className="logo-text">UKM Pencak Silat</span>
                 </div>

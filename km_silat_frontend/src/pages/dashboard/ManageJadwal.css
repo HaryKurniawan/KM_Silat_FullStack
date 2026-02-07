@@ -1,0 +1,414 @@
+.manage-jadwal-container {
+    min-height: 100vh;
+    background-color: transparent;
+    padding: var(--spacing-xl) var(--spacing-lg);
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Glassmorphism Header */
+.manage-header {
+    position: relative;
+    padding: 2.5rem;
+    border-radius: 2rem;
+    background: rgba(17, 24, 39, 0.4);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+@media (min-width: 768px) {
+    .manage-header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+}
+
+.header-glow {
+    position: absolute;
+    top: -2.5rem;
+    right: -2.5rem;
+    width: 8rem;
+    height: 8rem;
+    background: rgba(245, 158, 11, 0.1);
+    filter: blur(40px);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.header-content {
+    position: relative;
+    z-index: 1;
+}
+
+.header-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.header-icon-wrapper {
+    padding: 0.6rem;
+    background: rgba(245, 158, 11, 0.15);
+    border-radius: 0.75rem;
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.header-title {
+    font-size: 1.875rem;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -0.025em;
+}
+
+.text-highlight {
+    background: linear-gradient(to right, #fbbf24, #d97706);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+}
+
+.header-subtitle {
+    color: #9ca3af;
+    max-width: 32rem;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+.refresh-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(31, 41, 55, 0.5);
+    color: #d1d5db;
+    padding: 0.75rem 1.25rem;
+    border-radius: 1rem;
+    border: 1px solid #374151;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+.refresh-btn:hover:not(:disabled) {
+    background: rgba(31, 41, 55, 0.7);
+    border-color: #4b5563;
+}
+
+.refresh-btn:active {
+    transform: scale(0.95);
+}
+
+.refresh-btn.loading svg {
+    animation: spin 1s linear infinite;
+}
+
+/* Notification Toast */
+.notification-toast {
+    padding: 1rem;
+    border-radius: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border: 1px solid;
+    margin-bottom: 2rem;
+    animation: slideInDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    font-weight: 500;
+}
+
+.toast-success {
+    background: rgba(16, 185, 129, 0.1);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.2);
+}
+
+.toast-error {
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+.toast-icon {
+    padding: 0.4rem;
+    border-radius: 50%;
+}
+
+.toast-success .toast-icon {
+    background: rgba(16, 185, 129, 0.2);
+}
+
+.toast-error .toast-icon {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+/* Schedule Cards Grid */
+.schedule-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+}
+
+.schedule-card {
+    position: relative;
+    background: rgba(17, 24, 39, 0.4);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 1.5rem;
+    overflow: hidden;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+}
+
+.schedule-card:hover {
+    border-color: rgba(245, 158, 11, 0.3);
+    transform: translateY(-4px);
+}
+
+.card-accent-strip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    transition: all 0.3s;
+}
+
+.card-accent-active {
+    background-color: #f59e0b;
+}
+
+.card-accent-inactive {
+    background-color: #4b5563;
+}
+
+.schedule-card:hover .card-accent-strip {
+    width: 6px;
+}
+
+/* Card Header */
+.card-header {
+    background: rgba(31, 41, 55, 0.2);
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+@media (min-width: 640px) {
+    .card-header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+}
+
+.card-title-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.day-number {
+    font-size: 2.25rem;
+    font-weight: 900;
+    color: rgba(31, 41, 55, 0.5);
+    user-select: none;
+}
+
+.day-name {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: -0.025em;
+    transition: color 0.3s;
+}
+
+.schedule-card:hover .day-name {
+    color: #fbbf24;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+.status-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+}
+
+.status-dot.active {
+    background-color: #10b981;
+    box-shadow: 0 0 10px #10b981;
+}
+
+.status-dot.inactive {
+    background-color: #4b5563;
+}
+
+.status-text {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.save-btn {
+    position: relative;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: black;
+    padding: 0.75rem 2rem;
+    border-radius: 1rem;
+    font-weight: 800;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.3s;
+    box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.2);
+}
+
+.save-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    box-shadow: 0 20px 25px -5px rgba(245, 158, 11, 0.3);
+    transform: translateY(-2px);
+}
+
+.save-btn:active {
+    transform: translateY(0);
+}
+
+.save-btn:disabled {
+    background: #374151;
+    color: #9ca3af;
+    box-shadow: none;
+    cursor: default;
+}
+
+.save-btn svg {
+    transition: transform 0.3s;
+}
+
+.save-btn:hover svg {
+    transform: translateY(-2px);
+}
+
+/* Card Body (Form) */
+.card-body {
+    padding: 2rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+}
+
+@media (min-width: 768px) {
+    .form-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .form-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.input-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.input-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding-left: 0.25rem;
+}
+
+.input-control {
+    width: 100%;
+    background: rgba(31, 41, 55, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 1rem;
+    color: white;
+    font-size: 0.875rem;
+    padding: 1rem;
+    outline: none;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.input-control:hover:not(:disabled) {
+    background: rgba(31, 41, 55, 0.6);
+}
+
+.input-control:focus {
+    background: rgba(31, 41, 55, 0.8);
+    border-color: rgba(245, 158, 11, 0.5);
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
+}
+
+.input-control:disabled {
+    opacity: 0.2;
+    cursor: default;
+}
+
+.text-input::placeholder {
+    color: #4b5563;
+}
+
+/* Keyframes */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}

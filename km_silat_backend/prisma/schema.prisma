@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Pengguna {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  role      String   @default("ADMIN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Anggota {
+  id           String      @id @default(uuid())
+  nama         String
+  peran        String
+  angkatan     String
+  spesialisasi String
+  kejuaraan    Kejuaraan[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Kejuaraan {
+  id        String   @id @default(uuid())
+  nama      String
+  tahun     Int
+  prestasi  String
+  anggotaId String
+  anggota   Anggota  @relation(fields: [anggotaId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model KategoriRoadmap {
+  id          String        @id @default(uuid())
+  judul       String
+  subjudul    String
+  deskripsi   String
+  warnaAksen  String
+  items       ItemRoadmap[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model ItemRoadmap {
+  id                 String          @id
+  judul              String
+  deskripsi          String
+  label              String
+  videoUrl           String
+  tipeVideo          String
+  kontenDetail       String
+  ikon               String
+  kategoriRoadmapId  String
+  kategori           KategoriRoadmap @relation(fields: [kategoriRoadmapId], references: [id], onDelete: Cascade)
+  komentar           Komentar[]
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+}
+
+model Komentar {
+  id             String      @id @default(uuid())
+  namaPengguna   String
+  avatarPengguna String
+  isi            String
+  tanggal        DateTime    @default(now())
+  suka           Int         @default(0)
+  disukai        Boolean     @default(false)
+  itemRoadmapId  String
+  itemRoadmap    ItemRoadmap @relation(fields: [itemRoadmapId], references: [id], onDelete: Cascade)
+  parentId       String?
+  parent         Komentar?   @relation("Replies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies        Komentar[]  @relation("Replies")
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model Jadwal {
+  id        Int      @id // Use 0-6 for Sunday-Saturday to match new Date().getDay()
+  hari      String
+  status    String   @default("Istirahat") // Latihan / Istirahat
+  kategori  String?  // Fisik / Materi / Tanding
+  waktu     String?  // e.g. "16.00 - 17.30"
+  lokasi    String?  // e.g. "Lapangan Utama"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

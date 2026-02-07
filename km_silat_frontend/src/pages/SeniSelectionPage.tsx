@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '../components/PageHeader';
-import { Drama, ChevronRight, Lightbulb, Lock } from 'lucide-react';
+import { Drama, ChevronRight, Lightbulb } from 'lucide-react';
 import './SeniSelectionPage.css';
 import { roadmapService } from '../services/api';
 import { getIcon } from '../utils/iconMapper';
@@ -11,7 +11,6 @@ interface SubCategory {
     judul: string;
     deskripsi: string;
     ikon: string;
-    // available: boolean; // Assuming all DB items are available
 }
 
 export const SeniSelectionPage = () => {
@@ -21,10 +20,7 @@ export const SeniSelectionPage = () => {
     useEffect(() => {
         const fetchItems = async () => {
             try {
-                // Fetch items for 'seni' category. 
-                // ID 'seni' must exist in DB (seeded).
                 const response = await roadmapService.getItemsByCategory('seni');
-                // Backend returns array of items directly based on controller
                 setSubCategories(response.data);
             } catch (error) {
                 console.error("Failed to fetch Seni items", error);

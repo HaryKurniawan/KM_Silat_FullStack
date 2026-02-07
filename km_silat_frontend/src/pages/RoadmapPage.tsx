@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useLocation } from 'react-router-dom';
 import { PageHeader } from '../components/PageHeader';
-import { StepItem } from '../assets/StepItem';
+import { StepItem } from '../components/StepItem';
 import { getIconByKey } from '../utils/iconMapper';
 import { Trophy } from 'lucide-react';
 import './RoadmapPage.css';

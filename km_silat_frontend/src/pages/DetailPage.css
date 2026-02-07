@@ -44,8 +44,6 @@
     border-bottom: 1px solid var(--border-color);
 }
 
-
-
 .detail-title {
     font-size: 1.75rem;
     font-weight: 700;
@@ -60,6 +58,13 @@
 
 .video-section {
     padding: var(--spacing-lg);
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-md);
 }
 
 .video-container {
@@ -119,7 +124,6 @@
     padding: 0 var(--spacing-lg);
     position: sticky;
     top: 73px;
-    /* Header height + 1 */
     z-index: 40;
 }
 
@@ -132,6 +136,13 @@
     position: relative;
     transition: all 0.2s;
     font-size: 0.95rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
 }
 
 .tab-button:hover {
@@ -250,7 +261,7 @@
 
 .post-comment-btn {
     background: var(--color-gold);
-    color: #000;
+    color: #e7e7e7;
     padding: 0.6rem 1.75rem;
     border-radius: 2rem;
     font-weight: 700;
@@ -401,6 +412,10 @@
     background: rgba(249, 24, 128, 0.1);
 }
 
+.like-btn.liked {
+    color: #f91880;
+}
+
 .reply-btn:hover {
     color: var(--color-gold);
     background: rgba(251, 191, 36, 0.1);
@@ -441,10 +456,14 @@
     color: var(--text-muted);
     font-size: 0.85rem;
     cursor: pointer;
+    padding: 0.4rem 1rem;
+    border-radius: 6px;
+    transition: all 0.2s;
 }
 
 .cancel-reply-btn:hover {
     color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .post-comment-btn.small {
@@ -477,13 +496,100 @@
     border-bottom-left-radius: 12px;
 }
 
+/* ========== LOGIN PROMPT STYLING ========== */
+.login-prompt {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    padding: 3rem 2rem;
+    text-align: center;
+    margin-bottom: var(--spacing-2xl);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.login-prompt-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    color: var(--text-muted);
+}
+
+.login-prompt-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 1rem 0;
+}
+
+.login-prompt-text {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin: 0 0 2rem 0;
+    line-height: 1.6;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.login-prompt-button {
+    background: var(--color-gold);
+    color: #000;
+    border: none;
+    padding: 0.875rem 2rem;
+    border-radius: 2rem;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+}
+
+.login-prompt-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(251, 191, 36, 0.4);
+}
+
+/* ========== NO COMMENTS STATE ========== */
+.no-comments {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text-muted);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+}
+
+.no-comments svg {
+    margin: 0 auto 1rem;
+    opacity: 0.5;
+    color: var(--text-muted);
+}
+
+.no-comments p {
+    font-size: 0.95rem;
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+/* ========== FOOTER ========== */
 .detail-footer {
     text-align: center;
     padding-top: var(--spacing-2xl);
 }
 
 .footer-button {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
     padding: 0.75rem 2rem;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
@@ -497,14 +603,15 @@
     background: var(--bg-card-hover);
     color: var(--text-primary);
     border-color: var(--text-muted);
+    transform: translateY(-2px);
 }
 
+/* ========== ANIMATIONS ========== */
 @keyframes fadeIn {
     from {
         opacity: 0;
         transform: translateY(5px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
@@ -513,4 +620,138 @@
 
 .animate-fade-in {
     animation: fadeIn 0.3s ease-out;
+}
+
+/* ========== MOBILE RESPONSIVE ========== */
+@media (max-width: 768px) {
+    .detail-title {
+        font-size: 1.5rem;
+    }
+
+    .detail-subtitle {
+        font-size: 0.9rem;
+    }
+
+    .detail-tabs {
+        top: 61px;
+    }
+
+    .tab-button {
+        font-size: 0.875rem;
+        padding: 0.875rem;
+    }
+
+    .content-body {
+        padding: var(--spacing-lg);
+    }
+
+    .login-prompt {
+        padding: 2rem 1.5rem;
+    }
+
+    .login-prompt-icon {
+        width: 64px;
+        height: 64px;
+    }
+
+    .login-prompt-icon svg {
+        width: 32px;
+        height: 32px;
+    }
+
+    .login-prompt-title {
+        font-size: 1.25rem;
+    }
+
+    .login-prompt-text {
+        font-size: 0.875rem;
+    }
+
+    .login-prompt-button {
+        padding: 0.75rem 1.5rem;
+        font-size: 0.95rem;
+    }
+
+    .no-comments {
+        padding: 2rem 1.5rem;
+    }
+
+    .no-comments svg {
+        width: 40px;
+        height: 40px;
+    }
+
+    .comment-input-area {
+        padding: var(--spacing-md);
+    }
+
+    .replies-wrapper {
+        margin-left: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .detail-hero {
+        padding: var(--spacing-lg) var(--spacing-md);
+    }
+
+    .detail-title {
+        font-size: 1.25rem;
+    }
+
+    .video-section {
+        padding: var(--spacing-md);
+    }
+
+    .content-section {
+        padding: var(--spacing-md);
+    }
+
+    .login-prompt {
+        padding: 1.5rem 1rem;
+    }
+
+    .login-prompt-icon {
+        width: 56px;
+        height: 56px;
+    }
+
+    .login-prompt-title {
+        font-size: 1.125rem;
+    }
+
+    .login-prompt-text {
+        font-size: 0.8rem;
+    }
+
+    .comment-item {
+        padding: var(--spacing-md);
+    }
+
+    .comment-item.is-reply {
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+
+    .comment-avatar {
+        width: 36px;
+        height: 36px;
+    }
+
+    .is-main .comment-avatar {
+        width: 40px;
+        height: 40px;
+    }
+
+    .comment-author {
+        font-size: 0.95rem;
+    }
+
+    .comment-text {
+        font-size: 0.95rem;
+    }
+
+    .action-btn {
+        font-size: 0.8rem;
+        padding: 4px 8px;
+    }
 }

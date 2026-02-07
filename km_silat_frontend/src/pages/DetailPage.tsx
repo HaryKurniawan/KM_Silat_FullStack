@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useParams, useLocation } from 'react-router-dom';
+import { Link, useParams, useLocation, useNavigate } from 'react-router-dom';
 import { PageHeader } from '../components/PageHeader';
 import {
     BookOpen,
@@ -7,7 +7,8 @@ import {
     Heart,
     User,
     ArrowLeft,
-    Trash2
+    Trash2,
+    LogIn
 } from 'lucide-react';
 import './DetailPage.css';
 import { roadmapService } from '../services/api';
@@ -15,8 +16,9 @@ import { useAuth } from '../context/AuthContext';
 
 export const DetailPage = () => {
     const { category, subCategory, itemId } = useParams<{ category: string; subCategory?: string; itemId: string }>();
-    const { user } = useAuth();
+    const { user, isAuthenticated } = useAuth();
     const location = useLocation();
+    const navigate = useNavigate();
 
     // Tabs state
     const [activeTab, setActiveTab] = useState<'detail' | 'discussion'>('detail');
@@ -26,7 +28,6 @@ export const DetailPage = () => {
     const [categoryData, setCategoryData] = useState<any>(null);
     const [comments, setComments] = useState<any[]>([]);
     const [newComment, setNewComment] = useState('');
-    const [namaPengguna, setNamaPengguna] = useState('');
     const [loading, setLoading] = useState(true);
     const [replyingToId, setReplyingToId] = useState<string | null>(null);
 
@@ -111,14 +112,12 @@ export const DetailPage = () => {
     const videoId = getYouTubeId(item.videoUrl);
 
     const handleAddComment = async (parentId?: string) => {
-        if (!newComment.trim() || !itemId) return;
-
-        const finalName = user?.username || namaPengguna || 'Anonymous';
+        if (!newComment.trim() || !itemId || !isAuthenticated) return;
 
         try {
             await roadmapService.addComment(itemId, {
                 isi: newComment,
-                namaPengguna: finalName,
+                namaPengguna: user?.username || 'Anonymous',
                 parentId: parentId || undefined
             });
             await fetchComments();
@@ -141,16 +140,21 @@ export const DetailPage = () => {
     };
 
     const handleLike = async (id: string) => {
+        if (!isAuthenticated) {
+            alert('Silakan login terlebih dahulu untuk menyukai komentar');
+            return;
+        }
+
         try {
             await roadmapService.likeComment(id);
-            // Optimistic update or just refetch
+            // Optimistic update
             setComments(comments.map((c: any) => {
                 if (c.id === id) {
                     return {
                         ...c,
                         likes: c.disukai ? (c.suka || 0) - 1 : (c.suka || 0) + 1,
                         disukai: !c.disukai,
-                        suka: c.disukai ? (c.suka || 0) - 1 : (c.suka || 0) + 1 // Keep both for now to avoid confusion
+                        suka: c.disukai ? (c.suka || 0) - 1 : (c.suka || 0) + 1
                     };
                 }
                 // Also check replies
@@ -176,6 +180,14 @@ export const DetailPage = () => {
         }
     };
 
+    const handleReplyClick = (commentId: string) => {
+        if (!isAuthenticated) {
+            alert('Silakan login terlebih dahulu untuk membalas komentar');
+            return;
+        }
+        setReplyingToId(commentId === replyingToId ? null : commentId);
+    };
+
     const renderComment = (comment: any, isReply = false) => (
         <div key={comment.id} className={`comment-group ${isReply ? 'reply-group' : 'main-group'}`}>
             <div className={`comment-item ${isReply ? 'is-reply' : 'is-main'}`}>
@@ -192,16 +204,17 @@ export const DetailPage = () => {
                     </div>
                     <p className="comment-text">{comment.isi}</p>
                     <div className="comment-actions">
-                        <button className={`action-btn like-btn ${comment.disukai ? 'liked' : ''}`} onClick={() => handleLike(comment.id)}>
+                        <button 
+                            className={`action-btn like-btn ${comment.disukai ? 'liked' : ''}`} 
+                            onClick={() => handleLike(comment.id)}
+                        >
                             <Heart size={14} fill={comment.disukai ? "currentColor" : "none"} />
                             <span>{comment.suka || 0}</span>
                         </button>
                         {!isReply && (
                             <button
                                 className="action-btn reply-btn"
-                                onClick={() => {
-                                    setReplyingToId(comment.id === replyingToId ? null : comment.id);
-                                }}
+                                onClick={() => handleReplyClick(comment.id)}
                             >
                                 <MessageSquare size={14} />
                                 <span>Balas</span>
@@ -216,8 +229,8 @@ export const DetailPage = () => {
                         )}
                     </div>
 
-                    {/* Inline Reply Form */}
-                    {replyingToId === comment.id && (
+                    {/* Inline Reply Form - Only show if logged in */}
+                    {replyingToId === comment.id && isAuthenticated && (
                         <div className="inline-reply-form animate-fade-in">
                             <textarea
                                 placeholder={`Balas ke ${comment.namaPengguna}...`}
@@ -311,34 +324,53 @@ export const DetailPage = () => {
                     </>
                 ) : (
                     <div className="discussion-section animate-fade-in">
-                        <div className="comment-input-area">
-                            {!user && (
-                                <input
-                                    type="text"
-                                    placeholder="Nama atau Email Anda"
-                                    value={namaPengguna}
-                                    onChange={e => setNamaPengguna(e.target.value)}
-                                    style={{ width: '100%', padding: '0.75rem', background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', borderRadius: '8px', marginBottom: '0.75rem', color: 'white' }}
+                        {/* Show login prompt if not authenticated */}
+                        {!isAuthenticated ? (
+                            <div className="login-prompt">
+                                <div className="login-prompt-icon">
+                                    <LogIn size={48} />
+                                </div>
+                                <h3 className="login-prompt-title">Login untuk Berdiskusi</h3>
+                                <p className="login-prompt-text">
+                                    Silakan login terlebih dahulu untuk dapat mengirim komentar dan berinteraksi dalam diskusi.
+                                </p>
+                                <button 
+                                    className="login-prompt-button"
+                                    onClick={() => navigate('/login')}
+                                >
+                                    <LogIn size={18} />
+                                    Login Sekarang
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="comment-input-area">
+                                <textarea
+                                    placeholder="Tulis pertanyaan atau tanggapan Anda..."
+                                    value={newComment}
+                                    onChange={(e) => setNewComment(e.target.value)}
+                                    className="comment-input"
+                                    rows={3}
                                 />
-                            )}
-                            <textarea
-                                placeholder="Tulis pertanyaan atau tanggapan Anda..."
-                                value={newComment}
-                                onChange={(e) => setNewComment(e.target.value)}
-                                className="comment-input"
-                                rows={3}
-                            />
-                            <button
-                                className="post-comment-btn"
-                                onClick={() => handleAddComment()}
-                                disabled={!newComment.trim() || (!user && !namaPengguna.trim())}
-                            >
-                                Kirim Komentar
-                            </button>
-                        </div>
+                                <button
+                                    className="post-comment-btn"
+                                    onClick={() => handleAddComment()}
+                                    disabled={!newComment.trim()}
+                                >
+                                    Kirim Komentar
+                                </button>
+                            </div>
+                        )}
 
+                        {/* Comments List - Always visible */}
                         <div className="comments-list">
-                            {comments.map(c => renderComment(c))}
+                            {comments.length > 0 ? (
+                                comments.map(c => renderComment(c))
+                            ) : (
+                                <div className="no-comments">
+                                    <MessageSquare size={48} />
+                                    <p>Belum ada komentar. {isAuthenticated ? 'Jadilah yang pertama berkomentar!' : 'Login untuk memulai diskusi.'}</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

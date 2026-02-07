@@ -11,23 +11,23 @@ interface PageHeaderProps {
 
 export const PageHeader = ({ backTo, title, subtitle, icon }: PageHeaderProps) => {
     return (
-        <header className="page-header">
-            <Link to={backTo} className="page-header-back">
+        <div className="content-page-header">
+            <Link to={backTo} className="content-header-back">
                 <ChevronLeft size={24} />
             </Link>
 
             {(title || subtitle) && (
-                <div className="page-header-content">
-                    {title && <h1 className="page-header-title">{title}</h1>}
-                    {subtitle && <p className="page-header-subtitle">{subtitle}</p>}
+                <div className="content-header-text">
+                    {title && <h1 className="content-header-title">{title}</h1>}
+                    {subtitle && <p className="content-header-subtitle">{subtitle}</p>}
                 </div>
             )}
 
             {icon && (
-                <div className="page-header-icon">
+                <div className="content-header-icon">
                     {icon}
                 </div>
             )}
-        </header>
+        </div>
     );
 };

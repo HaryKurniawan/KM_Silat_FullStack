@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService } from '../services/api';
 
@@ -26,25 +25,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Check for token on load
         const token = localStorage.getItem('token');
         const savedUser = localStorage.getItem('user');
+        
+        console.log('AuthContext - Init Check:', { token, savedUser });
+        
         if (token && savedUser) {
-            setUser(JSON.parse(savedUser));
+            try {
+                const parsedUser = JSON.parse(savedUser);
+                console.log('AuthContext - User loaded from localStorage:', parsedUser);
+                setUser(parsedUser);
+            } catch (error) {
+                console.error('AuthContext - Error parsing user:', error);
+                localStorage.removeItem('user');
+                localStorage.removeItem('token');
+            }
         }
         setIsLoading(false);
     }, []);
 
     const login = async (credentials: any) => {
-        const response = await authService.login(credentials);
-        const { token, user } = response.data;
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
-        setUser(user);
+        try {
+            console.log('AuthContext - Login attempt with:', credentials);
+            const response = await authService.login(credentials);
+            console.log('AuthContext - Login response:', response.data);
+            
+            const { token, user: userData } = response.data;
+            
+            if (!token || !userData) {
+                throw new Error('Invalid response from server');
+            }
+            
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(userData));
+            setUser(userData);
+            
+            console.log('AuthContext - User logged in successfully:', userData);
+        } catch (error) {
+            console.error('AuthContext - Login error:', error);
+            throw error;
+        }
     };
 
     const logout = () => {
+        console.log('AuthContext - Logging out');
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setUser(null);
     };
+
+    // Debug log whenever user state changes
+    useEffect(() => {
+        console.log('AuthContext - User state changed:', user);
+        console.log('AuthContext - isAuthenticated:', !!user);
+    }, [user]);
 
     return (
         <AuthContext.Provider value={{ user, isLoading, login, logout, isAuthenticated: !!user }}>

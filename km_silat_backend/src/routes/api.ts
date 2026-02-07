@@ -1,4 +1,3 @@
-
 import { Router } from 'express';
 import { login } from '../controllers/authController';
 import { getAllAnggota, createAnggota, updateAnggota, deleteAnggota, addKejuaraan, updateKejuaraan, deleteKejuaraan } from '../controllers/anggotaController';
@@ -15,12 +14,19 @@ import {
 } from '../controllers/roadmapController';
 import { getDashboardStats } from '../controllers/statsController';
 import { getJadwal, updateJadwal } from '../controllers/jadwalController';
+import { getAllUsers, createUser, updateUser, deleteUser } from '../controllers/userController';
 import { authenticateToken } from '../middleware/authMiddleware';
 
 const router = Router();
 
 // Auth
 router.post('/auth/login', login);
+
+// User Management (Admin Only)
+router.get('/users', authenticateToken, getAllUsers);
+router.post('/users', authenticateToken, createUser);
+router.put('/users/:id', authenticateToken, updateUser);
+router.delete('/users/:id', authenticateToken, deleteUser);
 
 // Stats
 router.get('/stats', getDashboardStats);

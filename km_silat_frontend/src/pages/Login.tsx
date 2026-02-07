@@ -1,89 +1,108 @@
-
 import { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Lock, User } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { LogIn, Loader2, AlertCircle } from 'lucide-react';
+import './Login.css';
+import logo from '../assets/logo.png';
 
 export const Login = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const { login } = useAuth();
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError('');
+        setLoading(true);
+
         try {
-            await login({ username, password });
-            navigate('/dashboard');
-        } catch (err) {
-            setError('Login gagal. Periksa username dan password.');
+            await login({ username, password }); 
+            // Redirect ke landing page setelah login berhasil
+            navigate('/');
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Login gagal. Periksa username dan password Anda.');
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <div className="login-page" style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '100vh',
-            background: '#111827',
-            color: 'white'
-        }}>
-            <form onSubmit={handleSubmit} style={{
-                background: '#1f2937',
-                padding: '2rem',
-                borderRadius: '8px',
-                width: '100%',
-                maxWidth: '400px',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-            }}>
-                <h2 style={{ textAlign: 'center', marginBottom: '1.5rem', color: '#fbbf24' }}>Login Dashboard</h2>
+        <div className="login-container">
+            <div className="login-background-glow"></div>
+            
+            <div className="login-card">
+                <div className="login-header">
+                    <img src={logo} alt="Logo" className="login-logo" />
+                    <h1 className="login-title">UKM Pencak Silat</h1>
+                    <p className="login-subtitle">Masuk sebagai Anggota</p>
+                </div>
 
-                {error && <div style={{ color: '#ef4444', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
+                {error && (
+                    <div className="login-error">
+                        <AlertCircle size={18} />
+                        <span>{error}</span>
+                    </div>
+                )}
 
-                <div style={{ marginBottom: '1rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem' }}>Username</label>
-                    <div style={{ display: 'flex', alignItems: 'center', background: '#374151', borderRadius: '4px', padding: '0.5rem' }}>
-                        <User size={20} style={{ marginRight: '0.5rem', color: '#9ca3af' }} />
+                <form onSubmit={handleSubmit} className="login-form">
+                    <div className="form-group">
+                        <label htmlFor="username">Username</label>
                         <input
+                            id="username"
                             type="text"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
-                            style={{ background: 'transparent', border: 'none', color: 'white', width: '100%', outline: 'none' }}
-                            placeholder="Masukan username"
+                            placeholder="Masukkan username"
+                            disabled={loading}
+                            required
                         />
                     </div>
-                </div>
 
-                <div style={{ marginBottom: '1.5rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem' }}>Password</label>
-                    <div style={{ display: 'flex', alignItems: 'center', background: '#374151', borderRadius: '4px', padding: '0.5rem' }}>
-                        <Lock size={20} style={{ marginRight: '0.5rem', color: '#9ca3af' }} />
+                    <div className="form-group">
+                        <label htmlFor="password">Password</label>
                         <input
+                            id="password"
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            style={{ background: 'transparent', border: 'none', color: 'white', width: '100%', outline: 'none' }}
-                            placeholder="Masukan password"
+                            placeholder="Masukkan password"
+                            disabled={loading}
+                            required
                         />
                     </div>
-                </div>
 
-                <button type="submit" style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    background: '#fbbf24',
-                    color: '#111827',
-                    border: 'none',
-                    borderRadius: '4px',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    transition: 'background 0.2s'
-                }}>
-                    Masuk
-                </button>
-            </form>
+                    <button 
+                        type="submit" 
+                        className="login-button"
+                        disabled={loading}
+                    >
+                        {loading ? (
+                            <>
+                                <Loader2 size={20} className="spin" />
+                                <span>Memproses...</span>
+                            </>
+                        ) : (
+                            <>
+                                <LogIn size={20} />
+                                <span>Masuk</span>
+                            </>
+                        )}
+                    </button>
+                </form>
+
+                <div className="login-footer">
+                    <button 
+                        type="button"
+                        className="back-button"
+                        onClick={() => navigate('/')}
+                    >
+                        ← Kembali ke Beranda
+                    </button>
+                </div>
+            </div>
         </div>
     );
 };

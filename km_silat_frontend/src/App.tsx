@@ -7,11 +7,13 @@ import { DetailPage } from './pages/DetailPage';
 import { SeniSelectionPage } from './pages/SeniSelectionPage';
 import { KnowledgeManagementPage } from './pages/KnowledgeManagementPage';
 import { Login } from './pages/Login';
+import { AdminLogin } from './pages/dashboard/AdminLogin.tsx';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { DashboardHome } from './pages/dashboard/DashboardHome';
 import { ManageAnggota } from './pages/dashboard/ManageAnggota';
 import { ManageRoadmapItems } from './pages/dashboard/ManageRoadmapItems';
 import { ManageJadwal } from './pages/dashboard/ManageJadwal';
+import { ManageUsers } from './pages/dashboard/ManageUsers';
 import './index.css';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -25,7 +27,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) return <Navigate to="/dashboard/login" replace />;
   return children;
 };
 
@@ -40,7 +42,10 @@ function App() {
           <Route path="/knowledge-management" element={<KnowledgeManagementPage />} />
           <Route path="/seni" element={<SeniSelectionPage />} />
           <Route path="/seni/:subCategory" element={<RoadmapPage />} />
-          <Route path="/seni/:subCategory/:itemId" element={<DetailPage />} />
+          <Route path="/seni/:itemId" element={<DetailPage />} />
+
+          {/* Admin Login Route */}
+          <Route path="/dashboard/login" element={<AdminLogin />} />
 
           {/* Dashboard Routes (Protected) */}
           <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
@@ -48,6 +53,7 @@ function App() {
             <Route path="anggota" element={<ManageAnggota />} />
             <Route path="roadmaps" element={<ManageRoadmapItems />} />
             <Route path="jadwal" element={<ManageJadwal />} />
+            <Route path="users" element={<ManageUsers />} />
           </Route>
 
           {/* Catch-all for other categories like /tanding */}

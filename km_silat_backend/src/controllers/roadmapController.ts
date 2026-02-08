@@ -1,4 +1,3 @@
-
 import type { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 
@@ -69,7 +68,7 @@ export const getItemDetail = async (req: Request, res: Response) => {
         console.error('Error fetching item detail:', error);
         res.status(500).json({ message: 'Error fetching item detail' });
     }
-}
+};
 
 export const createItem = async (req: Request, res: Response) => {
     try {
@@ -78,6 +77,56 @@ export const createItem = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Error creating item:', error);
         res.status(500).json({ message: 'Error creating item' });
+    }
+};
+
+export const updateItem = async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    if (typeof id !== 'string') {
+        res.status(400).json({ message: 'Invalid ID' });
+        return;
+    }
+
+    try {
+        // Remove id from body if it exists to prevent updating the primary key
+        const { id: _, ...updateData } = req.body;
+
+        const item = await prisma.itemRoadmap.update({
+            where: { id },
+            data: updateData
+        });
+        res.json(item);
+    } catch (error: any) {
+        console.error('Error updating item:', error);
+        if (error.code === 'P2025') {
+            res.status(404).json({ message: 'Item not found' });
+        } else {
+            res.status(500).json({ message: 'Error updating item' });
+        }
+    }
+};
+
+export const deleteItem = async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    if (typeof id !== 'string') {
+        res.status(400).json({ message: 'Invalid ID' });
+        return;
+    }
+
+    try {
+        await prisma.itemRoadmap.delete({
+            where: { id }
+        });
+        res.json({ message: 'Item deleted successfully' });
+    } catch (error: any) {
+        console.error('Error deleting item:', error);
+        if (error.code === 'P2025') {
+            res.status(404).json({ message: 'Item not found' });
+        } else {
+            res.status(500).json({ message: 'Error deleting item' });
+        }
     }
 };
 

@@ -6,6 +6,8 @@ import {
     createCategory,
     getItemsByCategory,
     createItem,
+    updateItem,
+    deleteItem,
     getItemDetail,
     getCommentsByItem,
     createComment,
@@ -51,6 +53,8 @@ router.post('/roadmap-categories', authenticateToken, createCategory);
 router.get('/roadmaps/:categoryId', getItemsByCategory);
 router.get('/roadmap-items/:id', getItemDetail);
 router.post('/roadmap-items', authenticateToken, createItem);
+router.put('/roadmap-items/:id', authenticateToken, updateItem);
+router.delete('/roadmap-items/:id', authenticateToken, deleteItem);
 
 router.get('/roadmap-items/:itemId/comments', getCommentsByItem);
 router.post('/roadmap-items/:itemId/comments', createComment);

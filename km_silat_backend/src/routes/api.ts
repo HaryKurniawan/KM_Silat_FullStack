@@ -3,7 +3,10 @@ import { login } from '../controllers/authController';
 import { getAllAnggota, createAnggota, updateAnggota, deleteAnggota, addKejuaraan, updateKejuaraan, deleteKejuaraan } from '../controllers/anggotaController';
 import {
     getCategories,
+    getSubCategories,
     createCategory,
+    updateCategory,
+    deleteCategory,
     getItemsByCategory,
     createItem,
     updateItem,
@@ -46,16 +49,21 @@ router.post('/anggota/:id/kejuaraan', authenticateToken, addKejuaraan);
 router.put('/kejuaraan/:id', authenticateToken, updateKejuaraan);
 router.delete('/kejuaraan/:id', authenticateToken, deleteKejuaraan);
 
-// Roadmaps (Public Read, Admin Write)
+// Roadmap Categories (Public Read, Admin Write)
 router.get('/roadmap-categories', getCategories);
+router.get('/roadmap-categories/:parentSlug/subcategories', getSubCategories);
 router.post('/roadmap-categories', authenticateToken, createCategory);
+router.put('/roadmap-categories/:id', authenticateToken, updateCategory);
+router.delete('/roadmap-categories/:id', authenticateToken, deleteCategory);
 
+// Roadmap Items (Public Read, Admin Write)
 router.get('/roadmaps/:categoryId', getItemsByCategory);
 router.get('/roadmap-items/:id', getItemDetail);
 router.post('/roadmap-items', authenticateToken, createItem);
 router.put('/roadmap-items/:id', authenticateToken, updateItem);
 router.delete('/roadmap-items/:id', authenticateToken, deleteItem);
 
+// Comments (Public)
 router.get('/roadmap-items/:itemId/comments', getCommentsByItem);
 router.post('/roadmap-items/:itemId/comments', createComment);
 router.delete('/comments/:id', deleteComment);

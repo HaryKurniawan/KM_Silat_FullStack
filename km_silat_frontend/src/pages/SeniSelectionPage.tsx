@@ -10,7 +10,8 @@ interface SubCategory {
     id: string;
     judul: string;
     deskripsi: string;
-    ikon: string;
+    slug: string;
+    ikon?: string;
 }
 
 export const SeniSelectionPage = () => {
@@ -18,18 +19,19 @@ export const SeniSelectionPage = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchItems = async () => {
+        const fetchSubCategories = async () => {
             try {
-                const response = await roadmapService.getItemsByCategory('seni');
+                // Fetch subcategories of 'seni' parent category
+                const response = await roadmapService.getSubCategories('seni');
                 setSubCategories(response.data);
             } catch (error) {
-                console.error("Failed to fetch Seni items", error);
+                console.error("Failed to fetch Seni subcategories", error);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchItems();
+        fetchSubCategories();
     }, []);
 
     return (
@@ -55,9 +57,16 @@ export const SeniSelectionPage = () => {
                         <div style={{ color: 'white', textAlign: 'center', width: '100%' }}>Loading...</div>
                     ) : subCategories.length > 0 ? (
                         subCategories.map((sub, index) => (
-                            <Link key={sub.id} to={`/roadmap/seni/${sub.id}`} className="subcategory-card" style={{ animationDelay: `${index * 0.1}s` }}>
+                            <Link 
+                                key={sub.id} 
+                                to={`/seni/${sub.slug}`} 
+                                className="subcategory-card" 
+                                style={{ animationDelay: `${index * 0.1}s` }}
+                            >
                                 <div className="subcategory-icon-wrapper">
-                                    <span className="subcategory-icon">{getIcon(sub.ikon, 32)}</span>
+                                    <span className="subcategory-icon">
+                                        {sub.ikon ? getIcon(sub.ikon, 32) : <Drama size={32} />}
+                                    </span>
                                 </div>
                                 <div className="subcategory-content">
                                     <h3 className="subcategory-title">{sub.judul}</h3>
@@ -69,7 +78,9 @@ export const SeniSelectionPage = () => {
                             </Link>
                         ))
                     ) : (
-                        <div style={{ color: 'white', textAlign: 'center', width: '100%' }}>Belum ada materi.</div>
+                        <div style={{ color: 'white', textAlign: 'center', width: '100%' }}>
+                            Belum ada kategori seni. Silakan tambahkan dari dashboard.
+                        </div>
                     )}
                 </div>
             </section>

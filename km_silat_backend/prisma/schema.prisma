@@ -40,14 +40,22 @@ model Kejuaraan {
 }
 
 model KategoriRoadmap {
-  id          String        @id @default(uuid())
-  judul       String
-  subjudul    String
-  deskripsi   String
-  warnaAksen  String
-  items       ItemRoadmap[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id             String            @id @default(uuid())
+  judul          String
+  subjudul       String
+  deskripsi      String
+  warnaAksen     String
+  slug           String            @unique
+  ikon           String?
+  parentId       String?
+  parent         KategoriRoadmap?  @relation("SubCategories", fields: [parentId], references: [id], onDelete: Cascade)
+  subCategories  KategoriRoadmap[] @relation("SubCategories")
+  items          ItemRoadmap[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([parentId])
+  @@index([slug])
 }
 
 model ItemRoadmap {
@@ -56,21 +64,23 @@ model ItemRoadmap {
   deskripsi          String
   label              String
   videoUrl           String
-  tipeVideo          String
-  kontenDetail       String
+  tipeVideo          String          @default("youtube")
+  kontenDetail       String          @db.Text
   ikon               String
   kategoriRoadmapId  String
   kategori           KategoriRoadmap @relation(fields: [kategoriRoadmapId], references: [id], onDelete: Cascade)
   komentar           Komentar[]
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
+
+  @@index([kategoriRoadmapId])
 }
 
 model Komentar {
   id             String      @id @default(uuid())
   namaPengguna   String
   avatarPengguna String
-  isi            String
+  isi            String      @db.Text
   tanggal        DateTime    @default(now())
   suka           Int         @default(0)
   disukai        Boolean     @default(false)
@@ -81,15 +91,18 @@ model Komentar {
   replies        Komentar[]  @relation("Replies")
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
+
+  @@index([itemRoadmapId])
+  @@index([parentId])
 }
 
 model Jadwal {
-  id        Int      @id // Use 0-6 for Sunday-Saturday to match new Date().getDay()
+  id        Int      @id
   hari      String
-  status    String   @default("Istirahat") // Latihan / Istirahat
-  kategori  String?  // Fisik / Materi / Tanding
-  waktu     String?  // e.g. "16.00 - 17.30"
-  lokasi    String?  // e.g. "Lapangan Utama"
+  status    String   @default("Istirahat")
+  kategori  String?
+  waktu     String?
+  lokasi    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

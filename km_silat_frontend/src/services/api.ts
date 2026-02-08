@@ -45,13 +45,21 @@ export const anggotaService = {
 };
 
 export const roadmapService = {
+    // Categories
     getCategories: () => api.get('/roadmap-categories'),
+    getSubCategories: (parentSlug: string) => api.get(`/roadmap-categories/${parentSlug}/subcategories`),
     createCategory: (data: any) => api.post('/roadmap-categories', data),
+    updateCategory: (id: string, data: any) => api.put(`/roadmap-categories/${id}`, data),
+    deleteCategory: (id: string) => api.delete(`/roadmap-categories/${id}`),
+    
+    // Items
     getItemsByCategory: (categoryId: string) => api.get(`/roadmaps/${categoryId}`),
     getItemDetail: (id: string) => api.get(`/roadmap-items/${id}`),
     createItem: (data: any) => api.post('/roadmap-items', data),
     updateItem: (id: string, data: any) => api.put(`/roadmap-items/${id}`, data),
     deleteItem: (id: string) => api.delete(`/roadmap-items/${id}`),
+    
+    // Comments
     getCommentsByItem: (itemId: string) => api.get(`/roadmap-items/${itemId}/comments`),
     addComment: (itemId: string, data: { isi: string; namaPengguna?: string; parentId?: string }) => api.post(`/roadmap-items/${itemId}/comments`, data),
     deleteComment: (id: string) => api.delete(`/comments/${id}`),

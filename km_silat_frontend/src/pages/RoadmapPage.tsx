@@ -59,7 +59,7 @@ export const RoadmapPage = () => {
         }
         
         loadCategoryAndItems();
-    }, [location.pathname]); // Trigger re-load saat URL berubah
+    }, [location.pathname]);
 
     const loadCategoryAndItems = async () => {
         setLoading(true);
@@ -92,7 +92,6 @@ export const RoadmapPage = () => {
         console.log('🔗 category:', category);
         console.log('🔗 subCategory:', subCategory);
         
-        // Build path using current values
         let path: string;
         if (subCategory) {
             path = `/${category}/${subCategory}/${item.id}`;
@@ -113,14 +112,7 @@ export const RoadmapPage = () => {
 
     if (loading) {
         return (
-            <div style={{ 
-                minHeight: '100vh', 
-                background: 'var(--bg-primary)', 
-                display: 'flex', 
-                justifyContent: 'center', 
-                alignItems: 'center',
-                color: 'var(--text-primary)'
-            }}>
+            <div className="roadmap-loading">
                 <p>Memuat roadmap...</p>
             </div>
         );
@@ -128,29 +120,11 @@ export const RoadmapPage = () => {
 
     if (error || !categoryData) {
         return (
-            <div style={{ 
-                minHeight: '100vh', 
-                background: 'var(--bg-primary)', 
-                display: 'flex', 
-                flexDirection: 'column',
-                justifyContent: 'center', 
-                alignItems: 'center',
-                gap: '1rem',
-                color: 'var(--text-primary)',
-                padding: '2rem'
-            }}>
-                <p style={{ color: '#ef4444', fontSize: '1.2rem' }}>
+            <div className="roadmap-error-container">
+                <p className="error-message">
                     ❌ {error || 'Kategori tidak ditemukan'}
                 </p>
-                <div style={{ 
-                    background: 'var(--bg-card)', 
-                    padding: '1rem', 
-                    borderRadius: '8px',
-                    fontSize: '0.85rem',
-                    color: 'var(--text-secondary)',
-                    maxWidth: '500px',
-                    width: '100%'
-                }}>
+                <div className="debug-info">
                     <p><strong>Debug Info:</strong></p>
                     <p>URL: {location.pathname}</p>
                     <p>Category: {category || 'undefined'}</p>
@@ -158,15 +132,7 @@ export const RoadmapPage = () => {
                 </div>
                 <button 
                     onClick={() => navigate(getBackPath())}
-                    style={{ 
-                        padding: '0.75rem 1.5rem', 
-                        background: '#fbbf24', 
-                        color: '#111827',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontWeight: 'bold'
-                    }}
+                    className="back-button"
                 >
                     Kembali
                 </button>
@@ -183,20 +149,12 @@ export const RoadmapPage = () => {
             />
 
             <div className="roadmap-content">
-                <p style={{ 
-                    color: 'var(--text-secondary)', 
-                    marginBottom: '2rem',
-                    lineHeight: '1.6'
-                }}>
+                <p className="roadmap-description">
                     {categoryData.deskripsi}
                 </p>
 
                 {items.length === 0 ? (
-                    <div style={{
-                        textAlign: 'center',
-                        padding: '3rem',
-                        color: 'var(--text-secondary)'
-                    }}>
+                    <div className="empty-state">
                         <p>Belum ada materi tersedia untuk kategori ini.</p>
                     </div>
                 ) : (
@@ -206,60 +164,18 @@ export const RoadmapPage = () => {
                                 key={item.id}
                                 className="roadmap-item-card"
                                 onClick={() => handleItemClick(item)}
-                                style={{
-                                    background: 'var(--bg-card)',
-                                    padding: '1.5rem',
-                                    borderRadius: 'var(--border-radius)',
-                                    border: '1px solid var(--border-color)',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.3s ease'
-                                }}
                             >
-                                <div style={{ 
-                                    display: 'flex', 
-                                    justifyContent: 'space-between', 
-                                    alignItems: 'flex-start', 
-                                    marginBottom: '0.75rem' 
-                                }}>
-                                    <h3 style={{ 
-                                        margin: 0, 
-                                        color: 'var(--text-primary)',
-                                        fontSize: '1.1rem',
-                                        fontWeight: '600'
-                                    }}>
-                                        {item.judul}
-                                    </h3>
-                                    <span style={{
-                                        fontSize: '0.7rem',
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '0.05em',
-                                        color: categoryData.warnaAksen,
-                                        border: `1px solid ${categoryData.warnaAksen}`,
-                                        padding: '0.2rem 0.5rem',
-                                        borderRadius: '4px',
-                                        whiteSpace: 'nowrap'
-                                    }}>
-                                        {item.label}
-                                    </span>
+                                <div className="item-header">
+                                    <h3 className="item-title">{item.judul}</h3>
+                                    <span className="item-label">{item.label}</span>
                                 </div>
 
-                                <p style={{ 
-                                    color: 'var(--text-secondary)', 
-                                    fontSize: '0.9rem',
-                                    lineHeight: '1.5',
-                                    marginBottom: '1rem'
-                                }}>
+                                <p className="item-description">
                                     {item.deskripsi}
                                 </p>
 
                                 {item.videoUrl && (
-                                    <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.5rem',
-                                        color: categoryData.warnaAksen,
-                                        fontSize: '0.85rem'
-                                    }}>
+                                    <div className="item-video-badge">
                                         <Play size={16} />
                                         <span>Video tersedia</span>
                                     </div>

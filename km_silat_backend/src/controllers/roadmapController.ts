@@ -70,6 +70,44 @@ export const getSubCategories = async (req: Request, res: Response) => {
     }
 };
 
+// NEW: Get category by slug
+export const getCategoryBySlug = async (req: Request, res: Response) => {
+    const { slug } = req.params;
+    
+    if (typeof slug !== 'string' || !slug) {
+        res.status(400).json({ message: 'Invalid slug' });
+        return;
+    }
+    
+    try {
+        console.log('🔍 Finding category with slug:', slug);
+        
+        const category = await prisma.kategoriRoadmap.findFirst({
+            where: { slug },
+            include: {
+                items: true,
+                subCategories: {
+                    include: {
+                        items: true
+                    }
+                }
+            }
+        });
+
+        if (!category) {
+            console.log('❌ Category not found for slug:', slug);
+            res.status(404).json({ message: 'Kategori tidak ditemukan' });
+            return;
+        }
+
+        console.log('✅ Category found:', category.judul);
+        res.json(category);
+    } catch (error: any) {
+        console.error('Error fetching category by slug:', error);
+        res.status(500).json({ message: 'Error fetching category' });
+    }
+};
+
 export const createCategory = async (req: Request, res: Response) => {
     try {
         const { judul, subjudul, deskripsi, warnaAksen, slug, ikon, parentId } = req.body;
@@ -196,6 +234,8 @@ export const getItemsByCategory = async (req: Request, res: Response) => {
     }
     
     try {
+        console.log('🔍 Fetching items for categoryId:', categoryId);
+        
         // Try to find by ID first
         let items = await prisma.itemRoadmap.findMany({
             where: { kategoriRoadmapId: categoryId },
@@ -204,11 +244,13 @@ export const getItemsByCategory = async (req: Request, res: Response) => {
 
         // If no items found, try to find by slug
         if (items.length === 0) {
+            console.log('⚠️ No items found by ID, trying slug...');
             const category = await prisma.kategoriRoadmap.findFirst({
                 where: { slug: categoryId }
             });
 
             if (category) {
+                console.log('✅ Category found by slug:', category.judul);
                 items = await prisma.itemRoadmap.findMany({
                     where: { kategoriRoadmapId: category.id },
                     orderBy: { createdAt: 'asc' }
@@ -216,9 +258,49 @@ export const getItemsByCategory = async (req: Request, res: Response) => {
             }
         }
 
+        console.log(`✅ Found ${items.length} items`);
         res.json(items);
     } catch (error) {
         console.error('Error fetching items by category:', error);
+        res.status(500).json({ message: 'Error fetching items' });
+    }
+};
+
+// NEW: Get items by category slug (more explicit)
+export const getItemsByCategorySlug = async (req: Request, res: Response) => {
+    const { slug } = req.params;
+
+    if (typeof slug !== 'string' || !slug) {
+        res.status(400).json({ message: 'Invalid slug' });
+        return;
+    }
+    
+    try {
+        console.log('🔍 Fetching items for slug:', slug);
+        
+        // Find category by slug
+        const category = await prisma.kategoriRoadmap.findFirst({
+            where: { slug }
+        });
+
+        if (!category) {
+            console.log('❌ Category not found for slug:', slug);
+            res.status(404).json({ message: 'Kategori tidak ditemukan' });
+            return;
+        }
+
+        console.log('✅ Category found:', category.judul, '(ID:', category.id, ')');
+
+        // Get items for this category
+        const items = await prisma.itemRoadmap.findMany({
+            where: { kategoriRoadmapId: category.id },
+            orderBy: { createdAt: 'asc' }
+        });
+
+        console.log(`✅ Found ${items.length} items for category ${category.judul}`);
+        res.json(items);
+    } catch (error) {
+        console.error('Error fetching items by slug:', error);
         res.status(500).json({ message: 'Error fetching items' });
     }
 };

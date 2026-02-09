@@ -1,101 +1,175 @@
 import { useState, useEffect } from 'react';
-import { Link, useParams, useLocation } from 'react-router-dom';
-import { PageHeader } from '../components/PageHeader';
-import { StepItem } from '../components/StepItem';
-import { getIconByKey } from '../utils/iconMapper';
-import { Trophy } from 'lucide-react';
-import './RoadmapPage.css';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { roadmapService } from '../services/api';
+import { PageHeader } from '../components/PageHeader';
+import { Play } from 'lucide-react';
+import './RoadmapPage.css';
+
+interface RoadmapItem {
+    id: string;
+    judul: string;
+    deskripsi: string;
+    label: string;
+    videoUrl?: string;
+    ikon?: string;
+}
+
+interface Category {
+    id: string;
+    judul: string;
+    subjudul: string;
+    deskripsi: string;
+    slug: string;
+    warnaAksen: string;
+}
 
 export const RoadmapPage = () => {
-    const { category, subCategory } = useParams<{ category: string; subCategory?: string }>();
+    const navigate = useNavigate();
     const location = useLocation();
-    const [roadmap, setRoadmap] = useState<any>(null);
+    const [items, setItems] = useState<RoadmapItem[]>([]);
+    const [categoryData, setCategoryData] = useState<Category | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const isSeniSubCategory = location.pathname.startsWith('/seni/') && subCategory;
+    // Parse URL segments from location.pathname
+    const segments = location.pathname.split('/').filter(Boolean);
+    
+    // Determine category and subCategory
+    let category: string = '';
+    let subCategory: string | undefined;
+
+    if (segments.length === 1) {
+        category = segments[0];
+        subCategory = undefined;
+    } else if (segments.length === 2) {
+        category = segments[0];
+        subCategory = segments[1];
+    }
+
+    console.log('🔍 RoadmapPage - location.pathname:', location.pathname);
+    console.log('🔍 RoadmapPage - segments:', segments);
+    console.log('✅ RoadmapPage - category:', category);
+    console.log('✅ RoadmapPage - subCategory:', subCategory);
 
     useEffect(() => {
-        const fetchRoadmap = async () => {
-            setLoading(true);
-            try {
-                const categoriesResponse = await roadmapService.getCategories();
-                const categories = categoriesResponse.data;
+        if (!category) {
+            setError('Kategori tidak valid');
+            setLoading(false);
+            return;
+        }
+        
+        loadCategoryAndItems();
+    }, [location.pathname]); // Trigger re-load saat URL berubah
 
-                let currentCategory;
+    const loadCategoryAndItems = async () => {
+        setLoading(true);
+        setError(null);
 
-                if (isSeniSubCategory) {
-                    // For Seni subcategories (e.g., /seni/tunggal)
-                    currentCategory = categories.find((c: any) => 
-                        c.slug === subCategory && c.parentId !== null
-                    );
-                } else {
-                    // For main categories (e.g., /tanding)
-                    currentCategory = categories.find((c: any) =>
-                        c.slug === category && c.parentId === null
-                    );
-                }
+        try {
+            const slug = subCategory || category;
+            
+            console.log('📍 RoadmapPage - Loading data for slug:', slug);
 
-                if (currentCategory) {
-                    const response = await roadmapService.getItemsByCategory(currentCategory.id);
+            const categoryResponse = await roadmapService.getCategoryBySlug(slug);
+            console.log('✅ Category response:', categoryResponse.data);
+            setCategoryData(categoryResponse.data);
 
-                    setRoadmap({
-                        title: currentCategory.judul,
-                        subtitle: currentCategory.subjudul,
-                        description: currentCategory.deskripsi,
-                        accentColor: currentCategory.warnaAksen,
-                        items: response.data.map((item: any) => ({
-                            id: item.id,
-                            title: item.judul,
-                            description: item.deskripsi,
-                            label: item.label,
-                            videoUrl: item.videoUrl,
-                            icon: item.ikon
-                        }))
-                    });
-                } else {
-                    setRoadmap(null);
-                }
-            } catch (error) {
-                console.error("Failed to fetch roadmap", error);
-            } finally {
-                setLoading(false);
-            }
-        };
+            const itemsResponse = await roadmapService.getItemsByCategorySlug(slug);
+            console.log('✅ Items response:', itemsResponse.data);
+            setItems(itemsResponse.data);
 
-        fetchRoadmap();
-    }, [category, subCategory, isSeniSubCategory]);
-
-    const backLink = isSeniSubCategory ? '/seni' : '/';
-
-    const getDisplayTitle = () => {
-        return roadmap?.title || '';
+        } catch (err: any) {
+            console.error('❌ Error loading roadmap:', err);
+            setError(err.response?.data?.message || 'Gagal memuat data roadmap');
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const getIcon = (size: number, className?: string) => {
-        const key = category === 'tanding' ? 'technique' : 'art';
-        return getIconByKey(key, size, className);
+    const handleItemClick = (item: RoadmapItem) => {
+        console.log('🖱️ Item clicked:', item);
+        console.log('🔗 Current location:', location.pathname);
+        console.log('🔗 category:', category);
+        console.log('🔗 subCategory:', subCategory);
+        
+        // Build path using current values
+        let path: string;
+        if (subCategory) {
+            path = `/${category}/${subCategory}/${item.id}`;
+        } else {
+            path = `/${category}/${item.id}`;
+        }
+        
+        console.log('🔗 Navigating to:', path);
+        navigate(path);
+    };
+
+    const getBackPath = () => {
+        if (subCategory && category) {
+            return `/${category}`;
+        }
+        return '/';
     };
 
     if (loading) {
         return (
-            <div className="roadmap-page">
-                <PageHeader backTo={backLink} title="Loading..." />
-                <div className="roadmap-error">
-                    <p>Memuat data latihan...</p>
-                </div>
+            <div style={{ 
+                minHeight: '100vh', 
+                background: 'var(--bg-primary)', 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center',
+                color: 'var(--text-primary)'
+            }}>
+                <p>Memuat roadmap...</p>
             </div>
         );
     }
 
-    if (!roadmap || roadmap.items.length === 0) {
+    if (error || !categoryData) {
         return (
-            <div className="roadmap-page">
-                <PageHeader backTo={backLink} title="Tidak Ditemukan" />
-                <div className="roadmap-error">
-                    <p>Kategori tidak ditemukan atau belum ada materi</p>
-                    <Link to={backLink} className="back-link">Kembali</Link>
+            <div style={{ 
+                minHeight: '100vh', 
+                background: 'var(--bg-primary)', 
+                display: 'flex', 
+                flexDirection: 'column',
+                justifyContent: 'center', 
+                alignItems: 'center',
+                gap: '1rem',
+                color: 'var(--text-primary)',
+                padding: '2rem'
+            }}>
+                <p style={{ color: '#ef4444', fontSize: '1.2rem' }}>
+                    ❌ {error || 'Kategori tidak ditemukan'}
+                </p>
+                <div style={{ 
+                    background: 'var(--bg-card)', 
+                    padding: '1rem', 
+                    borderRadius: '8px',
+                    fontSize: '0.85rem',
+                    color: 'var(--text-secondary)',
+                    maxWidth: '500px',
+                    width: '100%'
+                }}>
+                    <p><strong>Debug Info:</strong></p>
+                    <p>URL: {location.pathname}</p>
+                    <p>Category: {category || 'undefined'}</p>
+                    <p>SubCategory: {subCategory || 'none'}</p>
                 </div>
+                <button 
+                    onClick={() => navigate(getBackPath())}
+                    style={{ 
+                        padding: '0.75rem 1.5rem', 
+                        background: '#fbbf24', 
+                        color: '#111827',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    Kembali
+                </button>
             </div>
         );
     }
@@ -103,56 +177,98 @@ export const RoadmapPage = () => {
     return (
         <div className="roadmap-page">
             <PageHeader
-                backTo={backLink}
-                title={getDisplayTitle()}
-                icon={getIcon(20)}
+                title={categoryData.judul}
+                subtitle={categoryData.subjudul}
+                backTo={getBackPath()}
             />
 
-            <section className="roadmap-hero">
-                <div className="hero-icon-circle">
-                    {getIcon(48)}
-                </div>
-                <h1 className="hero-title">{getDisplayTitle()}</h1>
-                {roadmap.subtitle && <h2 className="hero-subtitle-small">{roadmap.subtitle}</h2>}
-                <p className="hero-subtitle">{roadmap.description}</p>
-            </section>
+            <div className="roadmap-content">
+                <p style={{ 
+                    color: 'var(--text-secondary)', 
+                    marginBottom: '2rem',
+                    lineHeight: '1.6'
+                }}>
+                    {categoryData.deskripsi}
+                </p>
 
-            <div className="progress-card">
-                <h2 className="progress-title">Lanjutkan Perjalananmu!</h2>
-                <p className="progress-text">Ikuti setiap langkah untuk persiapan yang maksimal.</p>
-            </div>
-
-            <section className="timeline-section">
-                <div className="timeline-container">
-                    {roadmap.items.map((item: any, index: number) => (
-                        <StepItem
-                            key={item.id}
-                            item={{
-                                id: item.id,
-                                title: item.title,
-                                description: item.description,
-                                label: item.label,
-                                videoUrl: item.videoUrl,
-                                videoType: 'youtube',
-                                detailedContent: '',
-                                icon: item.icon
-                            }}
-                            category={isSeniSubCategory ? `seni/${subCategory}` : (category || '')}
-                            index={index}
-                            isLast={index === roadmap.items.length - 1}
-                            accentColor={roadmap.accentColor}
-                        />
-                    ))}
-                </div>
-
-                <div className="final-reward">
-                    <Trophy size={64} className="reward-icon-svg" color="#fbbf24" />
-                    <div>
-                        <h3 className="reward-title">{category === 'tanding' ? 'Siap Bertanding!' : 'Siap Tampil!'}</h3>
-                        <p className="reward-text">Kamu siap menghadapi kejuaraan</p>
+                {items.length === 0 ? (
+                    <div style={{
+                        textAlign: 'center',
+                        padding: '3rem',
+                        color: 'var(--text-secondary)'
+                    }}>
+                        <p>Belum ada materi tersedia untuk kategori ini.</p>
                     </div>
-                </div>
-            </section>
+                ) : (
+                    <div className="roadmap-grid">
+                        {items.map((item) => (
+                            <div
+                                key={item.id}
+                                className="roadmap-item-card"
+                                onClick={() => handleItemClick(item)}
+                                style={{
+                                    background: 'var(--bg-card)',
+                                    padding: '1.5rem',
+                                    borderRadius: 'var(--border-radius)',
+                                    border: '1px solid var(--border-color)',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s ease'
+                                }}
+                            >
+                                <div style={{ 
+                                    display: 'flex', 
+                                    justifyContent: 'space-between', 
+                                    alignItems: 'flex-start', 
+                                    marginBottom: '0.75rem' 
+                                }}>
+                                    <h3 style={{ 
+                                        margin: 0, 
+                                        color: 'var(--text-primary)',
+                                        fontSize: '1.1rem',
+                                        fontWeight: '600'
+                                    }}>
+                                        {item.judul}
+                                    </h3>
+                                    <span style={{
+                                        fontSize: '0.7rem',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.05em',
+                                        color: categoryData.warnaAksen,
+                                        border: `1px solid ${categoryData.warnaAksen}`,
+                                        padding: '0.2rem 0.5rem',
+                                        borderRadius: '4px',
+                                        whiteSpace: 'nowrap'
+                                    }}>
+                                        {item.label}
+                                    </span>
+                                </div>
+
+                                <p style={{ 
+                                    color: 'var(--text-secondary)', 
+                                    fontSize: '0.9rem',
+                                    lineHeight: '1.5',
+                                    marginBottom: '1rem'
+                                }}>
+                                    {item.deskripsi}
+                                </p>
+
+                                {item.videoUrl && (
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        color: categoryData.warnaAksen,
+                                        fontSize: '0.85rem'
+                                    }}>
+                                        <Play size={16} />
+                                        <span>Video tersedia</span>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

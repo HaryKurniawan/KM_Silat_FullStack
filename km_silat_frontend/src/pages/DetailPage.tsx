@@ -1,386 +1,591 @@
 import { useState, useEffect } from 'react';
-import { Link, useParams, useLocation, useNavigate } from 'react-router-dom';
-import { PageHeader } from '../components/PageHeader';
-import {
-    BookOpen,
-    MessageSquare,
-    Heart,
-    User,
-    ArrowLeft,
-    Trash2,
-    LogIn
-} from 'lucide-react';
-import './DetailPage.css';
+import { useParams, useNavigate } from 'react-router-dom';
 import { roadmapService } from '../services/api';
-import { useAuth } from '../context/AuthContext';
+import { PageHeader } from '../components/PageHeader';
+import { Play, FileText, MessageCircle, ThumbsUp, Send } from 'lucide-react';
+import './DetailPage.css';
+
+interface Comment {
+    id: string;
+    isi: string;
+    namaPengguna: string;
+    avatarPengguna: string;
+    suka: number;
+    disukai: boolean;
+    createdAt: string;
+    replies?: Comment[];
+}
+
+interface ItemDetail {
+    id: string;
+    judul: string;
+    deskripsi: string;
+    label: string;
+    videoUrl?: string;
+    tipeVideo?: string;
+    kontenDetail?: string;
+    ikon?: string;
+    komentar?: Comment[];
+}
 
 export const DetailPage = () => {
-    const { category, subCategory, itemId } = useParams<{ category: string; subCategory?: string; itemId: string }>();
-    const { user, isAuthenticated } = useAuth();
-    const location = useLocation();
+    const params = useParams();
     const navigate = useNavigate();
-
-    // Tabs state
-    const [activeTab, setActiveTab] = useState<'detail' | 'discussion'>('detail');
-
-    // Data state
-    const [item, setItem] = useState<any>(null);
-    const [categoryData, setCategoryData] = useState<any>(null);
-    const [comments, setComments] = useState<any[]>([]);
-    const [newComment, setNewComment] = useState('');
+    const [item, setItem] = useState<ItemDetail | null>(null);
     const [loading, setLoading] = useState(true);
-    const [replyingToId, setReplyingToId] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [commentText, setCommentText] = useState('');
+    const [replyingTo, setReplyingTo] = useState<string | null>(null);
+    const [userName, setUserName] = useState('');
+    const [backPath, setBackPath] = useState('/');
 
-    const isSeniSubCategory = location.pathname.startsWith('/seni/') && subCategory;
-    const actualCategory = isSeniSubCategory ? 'seni' : category;
+    // Intelligent itemId detection
+    // Route patterns:
+    // 1. /:category/:itemId (2 segments) - e.g., /tanding/teknik-pukulan
+    // 2. /:category/:subCategory/:itemId (3 segments) - e.g., /seni/tunggal/gerak-1
+    
+    const segments = window.location.pathname.split('/').filter(Boolean);
+    
+    // Determine if this is a detail page or roadmap page
+    // Known subcategories for 'seni': tunggal, berpasangan, regu
+    const knownSeniSubcategories = ['tunggal', 'berpasangan', 'regu'];
+    
+    let itemId: string;
+    let category: string;
+    let subCategory: string | undefined;
+    
+    if (segments.length === 2) {
+        // Pattern: /:category/:itemId
+        category = segments[0];
+        itemId = segments[1];
+    } else if (segments.length === 3) {
+        // Pattern: /:category/:subCategory/:itemId
+        category = segments[0];
+        subCategory = segments[1];
+        itemId = segments[2];
+    } else {
+        // Fallback
+        category = segments[0] || '';
+        itemId = segments[segments.length - 1] || '';
+    }
 
-    const fetchComments = async () => {
-        if (!itemId) return;
+    console.log('📍 Route segments:', segments);
+    console.log('📍 Detected itemId:', itemId);
+    console.log('📍 Category:', category);
+    console.log('📍 SubCategory:', subCategory);
+
+    useEffect(() => {
+        // Check if this is actually a subcategory page, not a detail page
+        if (segments.length === 2 && category === 'seni' && knownSeniSubcategories.includes(segments[1])) {
+            console.log('⚠️ This is a subcategory page, not a detail page. Redirecting...');
+            navigate(`/seni/${segments[1]}`);
+            return;
+        }
+
+        if (itemId) {
+            loadItemDetail();
+            determineBackPath();
+        }
+    }, [itemId, category, subCategory]);
+
+    const determineBackPath = async () => {
         try {
-            const response = await roadmapService.getCommentsByItem(itemId);
-            setComments(response.data);
-        } catch (error) {
-            console.error("Failed to fetch comments", error);
+            // Fetch categories to determine proper back path
+            const categoriesResponse = await roadmapService.getCategories();
+            const allCategories = categoriesResponse.data;
+            
+            // Helper to find category by slug recursively
+            const findCategoryBySlug = (categories: any[], slug: string): any => {
+                for (const cat of categories) {
+                    if (cat.slug.toLowerCase() === slug?.toLowerCase()) {
+                        return cat;
+                    }
+                    if (cat.subCategories && cat.subCategories.length > 0) {
+                        const found = findCategoryBySlug(cat.subCategories, slug);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            };
+            
+            if (subCategory) {
+                // Check if subCategory is actually a subcategory
+                const mainCat = findCategoryBySlug(allCategories, category || '');
+                if (mainCat?.subCategories?.some((sc: any) => sc.slug === subCategory)) {
+                    setBackPath(`/${category}/${subCategory}`);
+                } else {
+                    setBackPath(`/${category}`);
+                }
+            } else {
+                setBackPath(`/${category}`);
+            }
+        } catch (err) {
+            console.error('Error determining back path:', err);
+            setBackPath('/');
         }
     };
 
-    useEffect(() => {
-        const fetchDetail = async () => {
-            if (!itemId) return;
-            setLoading(true);
-            try {
-                if (actualCategory) {
-                    // 1. Fetch categories to find the REAL UUID
-                    const catsResponse = await roadmapService.getCategories();
-                    const categories = catsResponse.data;
-
-                    const currentCat = categories.find((c: any) =>
-                        c.id === actualCategory ||
-                        c.judul.toLowerCase().includes(actualCategory.toLowerCase())
-                    );
-
-                    if (currentCat) {
-                        setCategoryData(currentCat);
-
-                        // 2. Fetch Items for this category using the REAL UUID
-                        const response = await roadmapService.getItemsByCategory(currentCat.id);
-                        const foundItem = response.data.find((i: any) => i.id === itemId);
-
-                        if (foundItem) {
-                            setItem({
-                                title: foundItem.judul,
-                                description: foundItem.deskripsi,
-                                videoUrl: foundItem.videoUrl,
-                                detailedContent: foundItem.kontenDetail,
-                            });
-
-                            // 3. Fetch Comments
-                            await fetchComments();
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error("Failed to fetch detail", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchDetail();
-    }, [itemId, actualCategory]);
-
-    const backLink = isSeniSubCategory ? `/seni/${subCategory}` : `/${category}`;
-
-    if (loading) {
-        return (
-            <div className="detail-page">
-                <PageHeader backTo={backLink} title="Loading..." />
-                <div className="detail-error">
-                    <p>Memuat detail materi...</p>
-                </div>
-            </div>
-        );
-    }
-
-    if (!item) return null;
-
-    const getYouTubeId = (url: string) => {
-        const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/);
-        return match ? match[1] : null;
+    const loadItemDetail = async () => {
+        setLoading(true);
+        setError(null);
+        
+        try {
+            console.log('🔍 Loading item detail for:', itemId);
+            const response = await roadmapService.getItemDetail(itemId);
+            setItem(response.data);
+            console.log('✅ Item loaded:', response.data);
+        } catch (err: any) {
+            console.error('❌ Error loading item:', err);
+            setError(err.response?.data?.message || 'Gagal memuat detail materi');
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const videoId = getYouTubeId(item.videoUrl);
+    const handleBack = () => {
+        navigate(backPath);
+    };
 
-    const handleAddComment = async (parentId?: string) => {
-        if (!newComment.trim() || !itemId || !isAuthenticated) return;
+    const handleSubmitComment = async (e: React.FormEvent, parentId?: string) => {
+        e.preventDefault();
+        
+        if (!commentText.trim() || !itemId) return;
 
         try {
             await roadmapService.addComment(itemId, {
-                isi: newComment,
-                namaPengguna: user?.username || 'Anonymous',
-                parentId: parentId || undefined
+                isi: commentText,
+                namaPengguna: userName || 'Anonymous',
+                parentId
             });
-            await fetchComments();
-            setNewComment('');
-            setReplyingToId(null);
-        } catch (error) {
-            console.error("Failed to add comment", error);
+            
+            setCommentText('');
+            setReplyingTo(null);
+            await loadItemDetail();
+        } catch (err) {
+            console.error('Error posting comment:', err);
+            alert('Gagal mengirim komentar');
         }
     };
 
-    const handleDeleteComment = async (id: string) => {
-        if (confirm('Hapus komentar ini?')) {
-            try {
-                await roadmapService.deleteComment(id);
-                await fetchComments();
-            } catch (error) {
-                console.error("Failed to delete comment", error);
+    const handleLikeComment = async (commentId: string) => {
+        try {
+            await roadmapService.likeComment(commentId);
+            await loadItemDetail();
+        } catch (err) {
+            console.error('Error liking comment:', err);
+        }
+    };
+
+    const renderVideo = () => {
+        if (!item?.videoUrl) return null;
+
+        const isYouTube = item.tipeVideo === 'youtube' || item.videoUrl.includes('youtube.com') || item.videoUrl.includes('youtu.be');
+        
+        if (isYouTube) {
+            const videoId = item.videoUrl.includes('youtu.be') 
+                ? item.videoUrl.split('youtu.be/')[1]?.split('?')[0]
+                : item.videoUrl.split('v=')[1]?.split('&')[0];
+            
+            if (videoId) {
+                return (
+                    <div style={{
+                        position: 'relative',
+                        paddingBottom: '56.25%',
+                        height: 0,
+                        overflow: 'hidden',
+                        borderRadius: 'var(--border-radius)',
+                        marginBottom: '2rem'
+                    }}>
+                        <iframe
+                            src={`https://www.youtube.com/embed/${videoId}`}
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: '100%',
+                                border: 'none'
+                            }}
+                            allowFullScreen
+                            title={item.judul}
+                        />
+                    </div>
+                );
             }
         }
+
+        return (
+            <div style={{
+                background: 'var(--bg-card)',
+                padding: '2rem',
+                borderRadius: 'var(--border-radius)',
+                border: '1px solid var(--border-color)',
+                textAlign: 'center',
+                marginBottom: '2rem'
+            }}>
+                <Play size={48} style={{ color: '#fbbf24', marginBottom: '1rem' }} />
+                <a 
+                    href={item.videoUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{ color: '#fbbf24', textDecoration: 'none', fontWeight: 'bold' }}
+                >
+                    Tonton Video
+                </a>
+            </div>
+        );
     };
 
-    const handleLike = async (id: string) => {
-        if (!isAuthenticated) {
-            alert('Silakan login terlebih dahulu untuk menyukai komentar');
-            return;
-        }
-
-        try {
-            await roadmapService.likeComment(id);
-            // Optimistic update
-            setComments(comments.map((c: any) => {
-                if (c.id === id) {
-                    return {
-                        ...c,
-                        likes: c.disukai ? (c.suka || 0) - 1 : (c.suka || 0) + 1,
-                        disukai: !c.disukai,
-                        suka: c.disukai ? (c.suka || 0) - 1 : (c.suka || 0) + 1
-                    };
-                }
-                // Also check replies
-                if (c.replies) {
-                    return {
-                        ...c,
-                        replies: c.replies.map((r: any) => {
-                            if (r.id === id) {
-                                return {
-                                    ...r,
-                                    disukai: !r.disukai,
-                                    suka: r.disukai ? (r.suka || 0) - 1 : (r.suka || 0) + 1
-                                };
-                            }
-                            return r;
-                        })
-                    };
-                }
-                return c;
-            }));
-        } catch (error) {
-            console.error("Failed to like comment", error);
-        }
-    };
-
-    const handleReplyClick = (commentId: string) => {
-        if (!isAuthenticated) {
-            alert('Silakan login terlebih dahulu untuk membalas komentar');
-            return;
-        }
-        setReplyingToId(commentId === replyingToId ? null : commentId);
-    };
-
-    const renderComment = (comment: any, isReply = false) => (
-        <div key={comment.id} className={`comment-group ${isReply ? 'reply-group' : 'main-group'}`}>
-            <div className={`comment-item ${isReply ? 'is-reply' : 'is-main'}`}>
-                <div className="comment-avatar">
-                    <User size={isReply ? 18 : 22} />
-                </div>
-                <div className="comment-content-wrapper">
-                    <div className="comment-header">
-                        <div className="author-info">
-                            <span className="comment-author">{comment.namaPengguna}</span>
-                            <span className="dot-separator">•</span>
-                            <span className="comment-date">{new Date(comment.createdAt).toLocaleDateString()}</span>
-                        </div>
+    const renderComment = (comment: Comment, isReply: boolean = false) => (
+        <div 
+            key={comment.id} 
+            style={{
+                background: isReply ? 'var(--bg-primary)' : 'var(--bg-card)',
+                padding: '1rem',
+                borderRadius: 'var(--border-radius)',
+                border: '1px solid var(--border-color)',
+                marginLeft: isReply ? '2rem' : '0'
+            }}
+        >
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.75rem' }}>
+                <img 
+                    src={comment.avatarPengguna} 
+                    alt={comment.namaPengguna}
+                    style={{ 
+                        width: '40px', 
+                        height: '40px', 
+                        borderRadius: '50%',
+                        background: '#fbbf24'
+                    }}
+                />
+                <div style={{ flex: 1 }}>
+                    <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        marginBottom: '0.5rem'
+                    }}>
+                        <span style={{ 
+                            fontWeight: 'bold', 
+                            color: 'var(--text-primary)',
+                            fontSize: '0.95rem'
+                        }}>
+                            {comment.namaPengguna}
+                        </span>
+                        <span style={{ 
+                            fontSize: '0.8rem', 
+                            color: 'var(--text-secondary)' 
+                        }}>
+                            {new Date(comment.createdAt).toLocaleDateString('id-ID')}
+                        </span>
                     </div>
-                    <p className="comment-text">{comment.isi}</p>
-                    <div className="comment-actions">
-                        <button 
-                            className={`action-btn like-btn ${comment.disukai ? 'liked' : ''}`} 
-                            onClick={() => handleLike(comment.id)}
+                    <p style={{ 
+                        color: 'var(--text-secondary)', 
+                        margin: '0 0 0.75rem 0',
+                        lineHeight: '1.5'
+                    }}>
+                        {comment.isi}
+                    </p>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <button
+                            onClick={() => handleLikeComment(comment.id)}
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: comment.disukai ? '#fbbf24' : 'var(--text-secondary)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
+                                fontSize: '0.85rem',
+                                padding: '0.25rem 0.5rem'
+                            }}
                         >
-                            <Heart size={14} fill={comment.disukai ? "currentColor" : "none"} />
-                            <span>{comment.suka || 0}</span>
+                            <ThumbsUp size={16} fill={comment.disukai ? '#fbbf24' : 'none'} />
+                            {comment.suka}
                         </button>
                         {!isReply && (
                             <button
-                                className="action-btn reply-btn"
-                                onClick={() => handleReplyClick(comment.id)}
+                                onClick={() => setReplyingTo(comment.id)}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'var(--text-secondary)',
+                                    cursor: 'pointer',
+                                    fontSize: '0.85rem',
+                                    padding: '0.25rem 0.5rem'
+                                }}
                             >
-                                <MessageSquare size={14} />
-                                <span>Balas</span>
-                            </button>
-                        )}
-                        {/* Admin or Comment Owner can delete */}
-                        {(user?.role === 'ADMIN' || (user && user.username === comment.namaPengguna)) && (
-                            <button className="action-btn delete-btn" onClick={() => handleDeleteComment(comment.id)}>
-                                <Trash2 size={14} />
-                                <span>Hapus</span>
+                                Balas
                             </button>
                         )}
                     </div>
-
-                    {/* Inline Reply Form - Only show if logged in */}
-                    {replyingToId === comment.id && isAuthenticated && (
-                        <div className="inline-reply-form animate-fade-in">
-                            <textarea
-                                placeholder={`Balas ke ${comment.namaPengguna}...`}
-                                value={newComment}
-                                onChange={(e) => setNewComment(e.target.value)}
-                                className="comment-input inline"
-                                rows={2}
-                                autoFocus
-                            />
-                            <div className="inline-form-actions">
-                                <button className="cancel-reply-btn" onClick={() => setReplyingToId(null)}>Batal</button>
-                                <button
-                                    className="post-comment-btn small"
-                                    disabled={!newComment.trim()}
-                                    onClick={() => handleAddComment(comment.id)}
-                                >
-                                    Balas
-                                </button>
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
+
+            {/* Reply Form */}
+            {replyingTo === comment.id && (
+                <form 
+                    onSubmit={(e) => handleSubmitComment(e, comment.id)}
+                    style={{ marginTop: '1rem', marginLeft: '3rem' }}
+                >
+                    <textarea
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        placeholder="Tulis balasan..."
+                        style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            background: 'var(--bg-primary)',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: '8px',
+                            color: 'var(--text-primary)',
+                            resize: 'vertical',
+                            minHeight: '80px',
+                            marginBottom: '0.5rem'
+                        }}
+                    />
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                            type="submit"
+                            style={{
+                                padding: '0.5rem 1rem',
+                                background: '#fbbf24',
+                                color: '#111827',
+                                border: 'none',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                fontWeight: 'bold',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                            }}
+                        >
+                            <Send size={16} /> Kirim
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setReplyingTo(null);
+                                setCommentText('');
+                            }}
+                            style={{
+                                padding: '0.5rem 1rem',
+                                background: 'transparent',
+                                color: 'var(--text-secondary)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '8px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Batal
+                        </button>
+                    </div>
+                </form>
+            )}
+
+            {/* Replies */}
             {comment.replies && comment.replies.length > 0 && (
-                <div className="replies-wrapper">
-                    {comment.replies.map((reply: any) => renderComment(reply, true))}
+                <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {comment.replies.map(reply => renderComment(reply, true))}
                 </div>
             )}
         </div>
     );
 
+    if (loading) {
+        return (
+            <div style={{ 
+                minHeight: '100vh', 
+                background: 'var(--bg-primary)', 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center',
+                color: 'var(--text-primary)'
+            }}>
+                <p>Memuat detail materi...</p>
+            </div>
+        );
+    }
+
+    if (error || !item) {
+        return (
+            <div style={{ 
+                minHeight: '100vh', 
+                background: 'var(--bg-primary)', 
+                display: 'flex', 
+                flexDirection: 'column',
+                justifyContent: 'center', 
+                alignItems: 'center',
+                gap: '1rem',
+                color: 'var(--text-primary)'
+            }}>
+                <p style={{ color: '#ef4444' }}>❌ {error || 'Materi tidak ditemukan'}</p>
+                <button 
+                    onClick={handleBack}
+                    style={{ 
+                        padding: '0.75rem 1.5rem', 
+                        background: '#fbbf24', 
+                        color: '#111827',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    Kembali
+                </button>
+            </div>
+        );
+    }
+
     return (
         <div className="detail-page">
             <PageHeader
-                backTo={backLink}
-                title={categoryData.judul}
+                title={item.judul}
+                subtitle={item.label}
+                backTo={backPath}
             />
 
-            <div className="detail-hero">
-                <h1 className="detail-title">{item.title}</h1>
-                <p className="detail-subtitle">{item.description}</p>
-            </div>
+            <div className="detail-content">
+                {/* Video Section */}
+                {renderVideo()}
 
-            <section className="video-section">
-                <h2 className="section-title">
-                    Video Tutorial
-                </h2>
-                {videoId ? (
-                    <div className="video-container">
-                        <iframe src={`https://www.youtube.com/embed/${videoId}`} title={item.title} frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
-                    </div>
-                ) : (
-                    <div className="video-placeholder">
-                        <a href={item.videoUrl} target="_blank" rel="noopener noreferrer" className="video-link">
-                            Tonton Video
-                        </a>
+                {/* Description */}
+                <div style={{
+                    background: 'var(--bg-card)',
+                    padding: '1.5rem',
+                    borderRadius: 'var(--border-radius)',
+                    border: '1px solid var(--border-color)',
+                    marginBottom: '2rem'
+                }}>
+                    <h3 style={{ 
+                        color: 'var(--text-primary)', 
+                        marginBottom: '1rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                    }}>
+                        <FileText size={20} /> Deskripsi
+                    </h3>
+                    <p style={{ 
+                        color: 'var(--text-secondary)', 
+                        lineHeight: '1.6',
+                        margin: 0
+                    }}>
+                        {item.deskripsi}
+                    </p>
+                </div>
+
+                {/* Detailed Content */}
+                {item.kontenDetail && (
+                    <div style={{
+                        background: 'var(--bg-card)',
+                        padding: '1.5rem',
+                        borderRadius: 'var(--border-radius)',
+                        border: '1px solid var(--border-color)',
+                        marginBottom: '2rem'
+                    }}>
+                        <h3 style={{ 
+                            color: 'var(--text-primary)', 
+                            marginBottom: '1rem'
+                        }}>
+                            Detail Materi
+                        </h3>
+                        <div 
+                            style={{ 
+                                color: 'var(--text-secondary)', 
+                                lineHeight: '1.8',
+                                whiteSpace: 'pre-wrap'
+                            }}
+                            dangerouslySetInnerHTML={{ __html: item.kontenDetail }}
+                        />
                     </div>
                 )}
-            </section>
 
-            {/* Tab Navigation */}
-            <div className="detail-tabs">
-                <button
-                    className={`tab-button ${activeTab === 'detail' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('detail')}
-                >
-                    <BookOpen size={18} /> Penjelasan
-                </button>
-                <button
-                    className={`tab-button ${activeTab === 'discussion' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('discussion')}
-                >
-                    <MessageSquare size={18} /> Diskusi ({comments.length})
-                </button>
-            </div>
+                {/* Comments Section */}
+                <div style={{
+                    background: 'var(--bg-card)',
+                    padding: '1.5rem',
+                    borderRadius: 'var(--border-radius)',
+                    border: '1px solid var(--border-color)'
+                }}>
+                    <h3 style={{ 
+                        color: 'var(--text-primary)', 
+                        marginBottom: '1.5rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                    }}>
+                        <MessageCircle size={20} /> 
+                        Komentar ({item.komentar?.length || 0})
+                    </h3>
 
-            <section className="content-section">
-                {activeTab === 'detail' ? (
-                    <>
-                        <h2 className="section-title-hidden">Penjelasan Detail</h2>
-                        <div className="content-body animate-fade-in" style={{ color: 'var(--text-secondary)', lineHeight: '1.7' }}>
-                            {item.detailedContent.split('\n').map((line: string, i: number) => {
-                                if (line.startsWith('## ')) return <h2 key={i} className="content-h2">{line.replace('## ', '')}</h2>;
-                                if (line.startsWith('### ')) return <h3 key={i} className="content-h3">{line.replace('### ', '')}</h3>;
-                                if (line.startsWith('- ')) return <li key={i} className="content-li">{line.replace('- ', '')}</li>;
-                                if (line.match(/^\d+\./)) return <li key={i} className="content-li">{line}</li>;
-                                if (line.trim() === '') return <br key={i} />;
-                                return <p key={i} className="content-p">{line}</p>;
-                            })}
-                        </div>
-                    </>
-                ) : (
-                    <div className="discussion-section animate-fade-in">
-                        {/* Show login prompt if not authenticated */}
-                        {!isAuthenticated ? (
-                            <div className="login-prompt">
-                                <div className="login-prompt-icon">
-                                    <LogIn size={48} />
-                                </div>
-                                <h3 className="login-prompt-title">Login untuk Berdiskusi</h3>
-                                <p className="login-prompt-text">
-                                    Silakan login terlebih dahulu untuk dapat mengirim komentar dan berinteraksi dalam diskusi.
-                                </p>
-                                <button 
-                                    className="login-prompt-button"
-                                    onClick={() => navigate('/login')}
-                                >
-                                    <LogIn size={18} />
-                                    Login Sekarang
-                                </button>
-                            </div>
+                    {/* Comment Form */}
+                    <form onSubmit={(e) => handleSubmitComment(e)} style={{ marginBottom: '2rem' }}>
+                        <input
+                            type="text"
+                            placeholder="Nama Anda (opsional)"
+                            value={userName}
+                            onChange={(e) => setUserName(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '0.75rem',
+                                background: 'var(--bg-primary)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '8px',
+                                color: 'var(--text-primary)',
+                                marginBottom: '0.75rem'
+                            }}
+                        />
+                        <textarea
+                            value={commentText}
+                            onChange={(e) => setCommentText(e.target.value)}
+                            placeholder="Tulis komentar..."
+                            required
+                            style={{
+                                width: '100%',
+                                padding: '0.75rem',
+                                background: 'var(--bg-primary)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '8px',
+                                color: 'var(--text-primary)',
+                                resize: 'vertical',
+                                minHeight: '100px',
+                                marginBottom: '0.75rem'
+                            }}
+                        />
+                        <button
+                            type="submit"
+                            style={{
+                                padding: '0.75rem 1.5rem',
+                                background: '#fbbf24',
+                                color: '#111827',
+                                border: 'none',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                fontWeight: 'bold',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                            }}
+                        >
+                            <Send size={16} /> Kirim Komentar
+                        </button>
+                    </form>
+
+                    {/* Comments List */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {item.komentar && item.komentar.length > 0 ? (
+                            item.komentar.map(comment => renderComment(comment))
                         ) : (
-                            <div className="comment-input-area">
-                                <textarea
-                                    placeholder="Tulis pertanyaan atau tanggapan Anda..."
-                                    value={newComment}
-                                    onChange={(e) => setNewComment(e.target.value)}
-                                    className="comment-input"
-                                    rows={3}
-                                />
-                                <button
-                                    className="post-comment-btn"
-                                    onClick={() => handleAddComment()}
-                                    disabled={!newComment.trim()}
-                                >
-                                    Kirim Komentar
-                                </button>
-                            </div>
+                            <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '2rem' }}>
+                                Belum ada komentar. Jadilah yang pertama!
+                            </p>
                         )}
-
-                        {/* Comments List - Always visible */}
-                        <div className="comments-list">
-                            {comments.length > 0 ? (
-                                comments.map(c => renderComment(c))
-                            ) : (
-                                <div className="no-comments">
-                                    <MessageSquare size={48} />
-                                    <p>Belum ada komentar. {isAuthenticated ? 'Jadilah yang pertama berkomentar!' : 'Login untuk memulai diskusi.'}</p>
-                                </div>
-                            )}
-                        </div>
                     </div>
-                )}
-            </section>
-
-            <footer className="detail-footer">
-                <Link to={backLink} className="footer-button">
-                    <ArrowLeft size={18} /> Kembali ke Roadmap
-                </Link>
-            </footer>
+                </div>
+            </div>
         </div>
     );
 };

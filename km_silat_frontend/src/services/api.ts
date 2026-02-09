@@ -48,12 +48,14 @@ export const roadmapService = {
     // Categories
     getCategories: () => api.get('/roadmap-categories'),
     getSubCategories: (parentSlug: string) => api.get(`/roadmap-categories/${parentSlug}/subcategories`),
+    getCategoryBySlug: (slug: string) => api.get(`/roadmap-categories/slug/${slug}`),
     createCategory: (data: any) => api.post('/roadmap-categories', data),
     updateCategory: (id: string, data: any) => api.put(`/roadmap-categories/${id}`, data),
     deleteCategory: (id: string) => api.delete(`/roadmap-categories/${id}`),
     
     // Items
     getItemsByCategory: (categoryId: string) => api.get(`/roadmaps/${categoryId}`),
+    getItemsByCategorySlug: (slug: string) => api.get(`/roadmaps/slug/${slug}`),
     getItemDetail: (id: string) => api.get(`/roadmap-items/${id}`),
     createItem: (data: any) => api.post('/roadmap-items', data),
     updateItem: (id: string, data: any) => api.put(`/roadmap-items/${id}`, data),

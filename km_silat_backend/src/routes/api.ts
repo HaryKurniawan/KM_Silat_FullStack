@@ -4,10 +4,12 @@ import { getAllAnggota, createAnggota, updateAnggota, deleteAnggota, addKejuaraa
 import {
     getCategories,
     getSubCategories,
+    getCategoryBySlug,
     createCategory,
     updateCategory,
     deleteCategory,
     getItemsByCategory,
+    getItemsByCategorySlug,
     createItem,
     updateItem,
     deleteItem,
@@ -50,13 +52,17 @@ router.put('/kejuaraan/:id', authenticateToken, updateKejuaraan);
 router.delete('/kejuaraan/:id', authenticateToken, deleteKejuaraan);
 
 // Roadmap Categories (Public Read, Admin Write)
-router.get('/roadmap-categories', getCategories);
+// IMPORTANT: More specific routes MUST come before generic ones
+router.get('/roadmap-categories/slug/:slug', getCategoryBySlug); // NEW - Must be before /:parentSlug
 router.get('/roadmap-categories/:parentSlug/subcategories', getSubCategories);
+router.get('/roadmap-categories', getCategories);
 router.post('/roadmap-categories', authenticateToken, createCategory);
 router.put('/roadmap-categories/:id', authenticateToken, updateCategory);
 router.delete('/roadmap-categories/:id', authenticateToken, deleteCategory);
 
 // Roadmap Items (Public Read, Admin Write)
+// IMPORTANT: More specific routes MUST come before generic ones
+router.get('/roadmaps/slug/:slug', getItemsByCategorySlug); // NEW - Must be before /:categoryId
 router.get('/roadmaps/:categoryId', getItemsByCategory);
 router.get('/roadmap-items/:id', getItemDetail);
 router.post('/roadmap-items', authenticateToken, createItem);

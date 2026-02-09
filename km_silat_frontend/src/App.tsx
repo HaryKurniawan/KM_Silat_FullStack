@@ -26,13 +26,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  // Redirect ke login jika belum authenticated
   if (!isAuthenticated) {
     console.log('ProtectedRoute - Not authenticated, redirecting to /login');
     return <Navigate to="/login" replace />;
   }
   
-  // Redirect ke home jika bukan admin
   if (user?.role?.toLowerCase() !== 'admin') {
     console.log('ProtectedRoute - User is not admin, redirecting to /');
     return <Navigate to="/" replace />;
@@ -51,9 +49,11 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/knowledge-management" element={<KnowledgeManagementPage />} />
+          
+          {/* Seni Routes - URUTAN PENTING! */}
           <Route path="/seni" element={<SeniSelectionPage />} />
+          <Route path="/seni/:subCategory/:itemId" element={<DetailPage />} />
           <Route path="/seni/:subCategory" element={<RoadmapPage />} />
-          <Route path="/seni/:itemId" element={<DetailPage />} />
 
           {/* Dashboard Routes (Protected - Admin Only) */}
           <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
@@ -64,9 +64,9 @@ function App() {
             <Route path="users" element={<ManageUsers />} />
           </Route>
 
-          {/* Catch-all for other categories like /tanding */}
-          <Route path="/:category" element={<RoadmapPage />} />
+          {/* Catch-all for other categories */}
           <Route path="/:category/:itemId" element={<DetailPage />} />
+          <Route path="/:category" element={<RoadmapPage />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { roadmapService } from '../services/api';
 import { PageHeader } from '../components/PageHeader';
 import { Play, FileText, MessageCircle, ThumbsUp, Send } from 'lucide-react';
@@ -29,7 +29,7 @@ interface ItemDetail {
 }
 
 export const DetailPage = () => {
-    const params = useParams();
+    // const params = useParams();
     const navigate = useNavigate();
     const [item, setItem] = useState<ItemDetail | null>(null);
     const [loading, setLoading] = useState(true);
